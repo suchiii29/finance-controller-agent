@@ -1,0 +1,602 @@
+[
+  {
+    "ledger_id": "LED-0005",
+    "final_status": "PARTIAL",
+    "risk_level": "MEDIUM",
+    "detailed_explanation": "Ledger entry LED-0005 for Kaul PLC (\u20b9280,841.91, Ref: REF-66306997, Date: 2024-01-07) has corroboration across Invoice INV-0005 (\u20b9280,841.91), Settlement STL-0005 (\u20b9280,841.91), but lacks a corresponding Bank Statement record. Because bank statements represent primary cash movement controls, missing cash proof poses an unverified cash risk. This transaction cannot be auto-resolved and is escalated to Finance Ops for manual bank feed verification. Action Assigned: Escalate: Missing primary bank feed \u2013 cash control risk.",
+    "recommended_action": "Escalate: Missing primary bank feed \u2013 cash control risk",
+    "evidence_summary": {
+      "ledger": {
+        "id": "LED-0005",
+        "amount": 280841.91,
+        "date": "2024-01-07",
+        "reference": "REF-66306997",
+        "counterparty": "Kaul PLC"
+      },
+      "matched_sources": [
+        "invoice",
+        "settlement"
+      ],
+      "missing_sources": [
+        "bank"
+      ],
+      "matched_records": {
+        "bank": null,
+        "invoice": {
+          "id": "INV-0005",
+          "amount": 280841.91,
+          "date": "2024-01-07",
+          "reference": "REF-66306997"
+        },
+        "settlement": {
+          "id": "STL-0005",
+          "amount": 280841.91,
+          "date": "2024-01-07",
+          "reference": "REF-66306997"
+        }
+      },
+      "matcher_reason": "Partial match \u2014 missing: ['bank']. Found: invoice=INV-0005(T1,c=1.00) | settlement=STL-0005(T1,c=1.00)"
+    },
+    "safe_auto_resolved": false,
+    "original_status": "PARTIAL",
+    "confidence": 1.0,
+    "missing_sources": [
+      "bank"
+    ],
+    "matched_sources": [
+      "invoice",
+      "settlement"
+    ],
+    "explanation": "Ledger entry LED-0005 for Kaul PLC (\u20b9280,841.91, Ref: REF-66306997, Date: 2024-01-07) has corroboration across Invoice INV-0005 (\u20b9280,841.91), Settlement STL-0005 (\u20b9280,841.91), but lacks a corresponding Bank Statement record. Because bank statements represent primary cash movement controls, missing cash proof poses an unverified cash risk. This transaction cannot be auto-resolved and is escalated to Finance Ops for manual bank feed verification. Action Assigned: Escalate: Missing primary bank feed \u2013 cash control risk."
+  },
+  {
+    "ledger_id": "LED-0014",
+    "final_status": "SAFE_AUTO_RESOLVED",
+    "risk_level": "LOW",
+    "detailed_explanation": "Ledger entry LED-0014 for Dash, Radhakrishnan and Brar (\u20b9114,335.19, Ref: REF-20709497, Date: 2024-06-18) is 100% verified across Bank Statement BNK-0014 (\u20b9114,335.19), Settlement STL-0014 (\u20b9114,335.19) with zero amount discrepancy. The invoice record is pending vendor generation or accounting sync, but physical cash movement is fully confirmed by the bank feed. The Exception Agent has safely auto-resolved this low-risk non-cash timing lag without risk of financial misstatement. Action Assigned: Auto-resolve: Non-cash timing lag (invoice missing).",
+    "recommended_action": "Auto-resolve: Non-cash timing lag (invoice missing)",
+    "evidence_summary": {
+      "ledger": {
+        "id": "LED-0014",
+        "amount": 114335.19,
+        "date": "2024-06-18",
+        "reference": "REF-20709497",
+        "counterparty": "Dash, Radhakrishnan and Brar"
+      },
+      "matched_sources": [
+        "bank",
+        "settlement"
+      ],
+      "missing_sources": [
+        "invoice"
+      ],
+      "matched_records": {
+        "bank": {
+          "id": "BNK-0014",
+          "amount": 114335.19,
+          "date": "2024-06-18",
+          "reference": "REF-20709497"
+        },
+        "invoice": null,
+        "settlement": {
+          "id": "STL-0014",
+          "amount": 114335.19,
+          "date": "2024-06-19",
+          "reference": "REF-20709497"
+        }
+      },
+      "matcher_reason": "Partial match \u2014 missing: ['invoice']. Found: bank=BNK-0014(T1,c=1.00) | settlement=STL-0014(T1,c=1.00)"
+    },
+    "safe_auto_resolved": true,
+    "original_status": "PARTIAL",
+    "confidence": 1.0,
+    "missing_sources": [
+      "invoice"
+    ],
+    "matched_sources": [
+      "bank",
+      "settlement"
+    ],
+    "explanation": "Ledger entry LED-0014 for Dash, Radhakrishnan and Brar (\u20b9114,335.19, Ref: REF-20709497, Date: 2024-06-18) is 100% verified across Bank Statement BNK-0014 (\u20b9114,335.19), Settlement STL-0014 (\u20b9114,335.19) with zero amount discrepancy. The invoice record is pending vendor generation or accounting sync, but physical cash movement is fully confirmed by the bank feed. The Exception Agent has safely auto-resolved this low-risk non-cash timing lag without risk of financial misstatement. Action Assigned: Auto-resolve: Non-cash timing lag (invoice missing)."
+  },
+  {
+    "ledger_id": "LED-0026",
+    "final_status": "PARTIAL",
+    "risk_level": "MEDIUM",
+    "detailed_explanation": "Ledger entry LED-0026 for Bhatti-Kakar (\u20b9214,502.70, Ref: REF-63606628, Date: 2024-05-29) has corroboration across Invoice INV-0026 (\u20b9214,502.70), Settlement STL-0026 (\u20b9214,502.70), but lacks a corresponding Bank Statement record. Because bank statements represent primary cash movement controls, missing cash proof poses an unverified cash risk. This transaction cannot be auto-resolved and is escalated to Finance Ops for manual bank feed verification. Action Assigned: Escalate: Missing primary bank feed \u2013 cash control risk.",
+    "recommended_action": "Escalate: Missing primary bank feed \u2013 cash control risk",
+    "evidence_summary": {
+      "ledger": {
+        "id": "LED-0026",
+        "amount": 214502.7,
+        "date": "2024-05-29",
+        "reference": "REF-63606628",
+        "counterparty": "Bhatti-Kakar"
+      },
+      "matched_sources": [
+        "invoice",
+        "settlement"
+      ],
+      "missing_sources": [
+        "bank"
+      ],
+      "matched_records": {
+        "bank": null,
+        "invoice": {
+          "id": "INV-0026",
+          "amount": 214502.7,
+          "date": "2024-05-29",
+          "reference": "REF-63606628"
+        },
+        "settlement": {
+          "id": "STL-0026",
+          "amount": 214502.7,
+          "date": "2024-05-29",
+          "reference": "REF-63606628"
+        }
+      },
+      "matcher_reason": "Partial match \u2014 missing: ['bank']. Found: invoice=INV-0026(T1,c=1.00) | settlement=STL-0026(T1,c=1.00)"
+    },
+    "safe_auto_resolved": false,
+    "original_status": "PARTIAL",
+    "confidence": 1.0,
+    "missing_sources": [
+      "bank"
+    ],
+    "matched_sources": [
+      "invoice",
+      "settlement"
+    ],
+    "explanation": "Ledger entry LED-0026 for Bhatti-Kakar (\u20b9214,502.70, Ref: REF-63606628, Date: 2024-05-29) has corroboration across Invoice INV-0026 (\u20b9214,502.70), Settlement STL-0026 (\u20b9214,502.70), but lacks a corresponding Bank Statement record. Because bank statements represent primary cash movement controls, missing cash proof poses an unverified cash risk. This transaction cannot be auto-resolved and is escalated to Finance Ops for manual bank feed verification. Action Assigned: Escalate: Missing primary bank feed \u2013 cash control risk."
+  },
+  {
+    "ledger_id": "LED-0029",
+    "final_status": "SAFE_AUTO_RESOLVED",
+    "risk_level": "LOW",
+    "detailed_explanation": "Ledger entry LED-0029 for Dewan-Koshy (\u20b9313,909.30, Ref: REF-90048665, Date: 2024-02-09) is 100% verified across Bank Statement BNK-0029 (\u20b9313,909.30), Settlement STL-0029 (\u20b9313,909.30) with zero amount discrepancy. The invoice record is pending vendor generation or accounting sync, but physical cash movement is fully confirmed by the bank feed. The Exception Agent has safely auto-resolved this low-risk non-cash timing lag without risk of financial misstatement. Action Assigned: Auto-resolve: Non-cash timing lag (invoice missing).",
+    "recommended_action": "Auto-resolve: Non-cash timing lag (invoice missing)",
+    "evidence_summary": {
+      "ledger": {
+        "id": "LED-0029",
+        "amount": 313909.3,
+        "date": "2024-02-09",
+        "reference": "REF-90048665",
+        "counterparty": "Dewan-Koshy"
+      },
+      "matched_sources": [
+        "bank",
+        "settlement"
+      ],
+      "missing_sources": [
+        "invoice"
+      ],
+      "matched_records": {
+        "bank": {
+          "id": "BNK-0029",
+          "amount": 313909.3,
+          "date": "2024-02-09",
+          "reference": "REF-90048665"
+        },
+        "invoice": null,
+        "settlement": {
+          "id": "STL-0029",
+          "amount": 313909.3,
+          "date": "2024-02-10",
+          "reference": "REF-90048665"
+        }
+      },
+      "matcher_reason": "Partial match \u2014 missing: ['invoice']. Found: bank=BNK-0029(T1,c=1.00) | settlement=STL-0029(T1,c=1.00)"
+    },
+    "safe_auto_resolved": true,
+    "original_status": "PARTIAL",
+    "confidence": 1.0,
+    "missing_sources": [
+      "invoice"
+    ],
+    "matched_sources": [
+      "bank",
+      "settlement"
+    ],
+    "explanation": "Ledger entry LED-0029 for Dewan-Koshy (\u20b9313,909.30, Ref: REF-90048665, Date: 2024-02-09) is 100% verified across Bank Statement BNK-0029 (\u20b9313,909.30), Settlement STL-0029 (\u20b9313,909.30) with zero amount discrepancy. The invoice record is pending vendor generation or accounting sync, but physical cash movement is fully confirmed by the bank feed. The Exception Agent has safely auto-resolved this low-risk non-cash timing lag without risk of financial misstatement. Action Assigned: Auto-resolve: Non-cash timing lag (invoice missing)."
+  },
+  {
+    "ledger_id": "LED-0035",
+    "final_status": "SAFE_AUTO_RESOLVED",
+    "risk_level": "LOW",
+    "detailed_explanation": "Ledger entry LED-0035 for Bhatt-Rajan (\u20b9254,087.00, Ref: REF-93926371, Date: 2024-02-15) is fully corroborated by Bank Statement BNK-0035 (\u20b9254,087.00), Invoice INV-0035 (\u20b9254,087.00). The payment gateway settlement batch is currently lagging, but bank statement verification confirms cash receipt. The Exception Agent has safely auto-resolved this entry as a low-risk settlement sync delay. Action Assigned: Auto-resolve: Settlement sync delay.",
+    "recommended_action": "Auto-resolve: Settlement sync delay",
+    "evidence_summary": {
+      "ledger": {
+        "id": "LED-0035",
+        "amount": 254087.0,
+        "date": "2024-02-15",
+        "reference": "REF-93926371",
+        "counterparty": "Bhatt-Rajan"
+      },
+      "matched_sources": [
+        "bank",
+        "invoice"
+      ],
+      "missing_sources": [
+        "settlement"
+      ],
+      "matched_records": {
+        "bank": {
+          "id": "BNK-0035",
+          "amount": 254087.0,
+          "date": "2024-02-15",
+          "reference": "REF-93926371"
+        },
+        "invoice": {
+          "id": "INV-0035",
+          "amount": 254087.0,
+          "date": "2024-02-15",
+          "reference": "REF-93926371"
+        },
+        "settlement": null
+      },
+      "matcher_reason": "Partial match \u2014 missing: ['settlement']. Found: bank=BNK-0035(T1,c=1.00) | invoice=INV-0035(T1,c=1.00)"
+    },
+    "safe_auto_resolved": true,
+    "original_status": "PARTIAL",
+    "confidence": 1.0,
+    "missing_sources": [
+      "settlement"
+    ],
+    "matched_sources": [
+      "bank",
+      "invoice"
+    ],
+    "explanation": "Ledger entry LED-0035 for Bhatt-Rajan (\u20b9254,087.00, Ref: REF-93926371, Date: 2024-02-15) is fully corroborated by Bank Statement BNK-0035 (\u20b9254,087.00), Invoice INV-0035 (\u20b9254,087.00). The payment gateway settlement batch is currently lagging, but bank statement verification confirms cash receipt. The Exception Agent has safely auto-resolved this entry as a low-risk settlement sync delay. Action Assigned: Auto-resolve: Settlement sync delay."
+  },
+  {
+    "ledger_id": "LED-0040",
+    "final_status": "SAFE_AUTO_RESOLVED",
+    "risk_level": "LOW",
+    "detailed_explanation": "Ledger entry LED-0040 for Setty Inc (\u20b929,433.62, Ref: REF-20570592, Date: 2024-03-02) is fully corroborated by Bank Statement BNK-0040 (\u20b929,433.62), Invoice INV-0040 (\u20b929,433.62). The payment gateway settlement batch is currently lagging, but bank statement verification confirms cash receipt. The Exception Agent has safely auto-resolved this entry as a low-risk settlement sync delay. Action Assigned: Auto-resolve: Settlement sync delay.",
+    "recommended_action": "Auto-resolve: Settlement sync delay",
+    "evidence_summary": {
+      "ledger": {
+        "id": "LED-0040",
+        "amount": 29433.62,
+        "date": "2024-03-02",
+        "reference": "REF-20570592",
+        "counterparty": "Setty Inc"
+      },
+      "matched_sources": [
+        "bank",
+        "invoice"
+      ],
+      "missing_sources": [
+        "settlement"
+      ],
+      "matched_records": {
+        "bank": {
+          "id": "BNK-0040",
+          "amount": 29433.62,
+          "date": "2024-03-02",
+          "reference": "REF-20570592"
+        },
+        "invoice": {
+          "id": "INV-0040",
+          "amount": 29433.62,
+          "date": "2024-03-02",
+          "reference": "REF-20570592"
+        },
+        "settlement": null
+      },
+      "matcher_reason": "Partial match \u2014 missing: ['settlement']. Found: bank=BNK-0040(T1,c=1.00) | invoice=INV-0040(T1,c=1.00)"
+    },
+    "safe_auto_resolved": true,
+    "original_status": "PARTIAL",
+    "confidence": 1.0,
+    "missing_sources": [
+      "settlement"
+    ],
+    "matched_sources": [
+      "bank",
+      "invoice"
+    ],
+    "explanation": "Ledger entry LED-0040 for Setty Inc (\u20b929,433.62, Ref: REF-20570592, Date: 2024-03-02) is fully corroborated by Bank Statement BNK-0040 (\u20b929,433.62), Invoice INV-0040 (\u20b929,433.62). The payment gateway settlement batch is currently lagging, but bank statement verification confirms cash receipt. The Exception Agent has safely auto-resolved this entry as a low-risk settlement sync delay. Action Assigned: Auto-resolve: Settlement sync delay."
+  },
+  {
+    "ledger_id": "LED-0045",
+    "final_status": "SAFE_AUTO_RESOLVED",
+    "risk_level": "LOW",
+    "detailed_explanation": "Ledger entry LED-0045 for Naik Group (\u20b9497,577.10, Ref: REF-68800797, Date: 2024-04-12) is 100% verified across Bank Statement BNK-0045 (\u20b9497,577.10), Settlement STL-0045 (\u20b9497,577.10) with zero amount discrepancy. The invoice record is pending vendor generation or accounting sync, but physical cash movement is fully confirmed by the bank feed. The Exception Agent has safely auto-resolved this low-risk non-cash timing lag without risk of financial misstatement. Action Assigned: Auto-resolve: Non-cash timing lag (invoice missing).",
+    "recommended_action": "Auto-resolve: Non-cash timing lag (invoice missing)",
+    "evidence_summary": {
+      "ledger": {
+        "id": "LED-0045",
+        "amount": 497577.1,
+        "date": "2024-04-12",
+        "reference": "REF-68800797",
+        "counterparty": "Naik Group"
+      },
+      "matched_sources": [
+        "bank",
+        "settlement"
+      ],
+      "missing_sources": [
+        "invoice"
+      ],
+      "matched_records": {
+        "bank": {
+          "id": "BNK-0045",
+          "amount": 497577.1,
+          "date": "2024-04-12",
+          "reference": "REF-68800797"
+        },
+        "invoice": null,
+        "settlement": {
+          "id": "STL-0045",
+          "amount": 497577.1,
+          "date": "2024-04-12",
+          "reference": "REF-68800797"
+        }
+      },
+      "matcher_reason": "Partial match \u2014 missing: ['invoice']. Found: bank=BNK-0045(T1,c=1.00) | settlement=STL-0045(T1,c=1.00)"
+    },
+    "safe_auto_resolved": true,
+    "original_status": "PARTIAL",
+    "confidence": 1.0,
+    "missing_sources": [
+      "invoice"
+    ],
+    "matched_sources": [
+      "bank",
+      "settlement"
+    ],
+    "explanation": "Ledger entry LED-0045 for Naik Group (\u20b9497,577.10, Ref: REF-68800797, Date: 2024-04-12) is 100% verified across Bank Statement BNK-0045 (\u20b9497,577.10), Settlement STL-0045 (\u20b9497,577.10) with zero amount discrepancy. The invoice record is pending vendor generation or accounting sync, but physical cash movement is fully confirmed by the bank feed. The Exception Agent has safely auto-resolved this low-risk non-cash timing lag without risk of financial misstatement. Action Assigned: Auto-resolve: Non-cash timing lag (invoice missing)."
+  },
+  {
+    "ledger_id": "LED-0049",
+    "final_status": "SAFE_AUTO_RESOLVED",
+    "risk_level": "LOW",
+    "detailed_explanation": "Ledger entry LED-0049 for Sunder, Biswas and Walia (\u20b9315,735.93, Ref: REF-19046318, Date: 2024-06-30) is fully corroborated by Bank Statement BNK-0049 (\u20b9315,735.93), Invoice INV-0049 (\u20b9315,735.93). The payment gateway settlement batch is currently lagging, but bank statement verification confirms cash receipt. The Exception Agent has safely auto-resolved this entry as a low-risk settlement sync delay. Action Assigned: Auto-resolve: Settlement sync delay.",
+    "recommended_action": "Auto-resolve: Settlement sync delay",
+    "evidence_summary": {
+      "ledger": {
+        "id": "LED-0049",
+        "amount": 315735.93,
+        "date": "2024-06-30",
+        "reference": "REF-19046318",
+        "counterparty": "Sunder, Biswas and Walia"
+      },
+      "matched_sources": [
+        "bank",
+        "invoice"
+      ],
+      "missing_sources": [
+        "settlement"
+      ],
+      "matched_records": {
+        "bank": {
+          "id": "BNK-0049",
+          "amount": 315735.93,
+          "date": "2024-06-30",
+          "reference": "REF-19046318"
+        },
+        "invoice": {
+          "id": "INV-0049",
+          "amount": 315735.93,
+          "date": "2024-06-30",
+          "reference": "REF-19046318"
+        },
+        "settlement": null
+      },
+      "matcher_reason": "Partial match \u2014 missing: ['settlement']. Found: bank=BNK-0049(T1,c=1.00) | invoice=INV-0049(T1,c=1.00)"
+    },
+    "safe_auto_resolved": true,
+    "original_status": "PARTIAL",
+    "confidence": 1.0,
+    "missing_sources": [
+      "settlement"
+    ],
+    "matched_sources": [
+      "bank",
+      "invoice"
+    ],
+    "explanation": "Ledger entry LED-0049 for Sunder, Biswas and Walia (\u20b9315,735.93, Ref: REF-19046318, Date: 2024-06-30) is fully corroborated by Bank Statement BNK-0049 (\u20b9315,735.93), Invoice INV-0049 (\u20b9315,735.93). The payment gateway settlement batch is currently lagging, but bank statement verification confirms cash receipt. The Exception Agent has safely auto-resolved this entry as a low-risk settlement sync delay. Action Assigned: Auto-resolve: Settlement sync delay."
+  },
+  {
+    "ledger_id": "LED-0061",
+    "final_status": "SAFE_AUTO_RESOLVED",
+    "risk_level": "LOW",
+    "detailed_explanation": "Ledger entry LED-0061 for Khanna, Mallick and Sunder (\u20b9463,220.31, Ref: REF-32321899, Date: 2024-01-24) is 100% verified across Bank Statement BNK-0061 (\u20b9463,220.31), Settlement STL-0061 (\u20b9463,220.31) with zero amount discrepancy. The invoice record is pending vendor generation or accounting sync, but physical cash movement is fully confirmed by the bank feed. The Exception Agent has safely auto-resolved this low-risk non-cash timing lag without risk of financial misstatement. Action Assigned: Auto-resolve: Non-cash timing lag (invoice missing).",
+    "recommended_action": "Auto-resolve: Non-cash timing lag (invoice missing)",
+    "evidence_summary": {
+      "ledger": {
+        "id": "LED-0061",
+        "amount": 463220.31,
+        "date": "2024-01-24",
+        "reference": "REF-32321899",
+        "counterparty": "Khanna, Mallick and Sunder"
+      },
+      "matched_sources": [
+        "bank",
+        "settlement"
+      ],
+      "missing_sources": [
+        "invoice"
+      ],
+      "matched_records": {
+        "bank": {
+          "id": "BNK-0061",
+          "amount": 463220.31,
+          "date": "2024-01-24",
+          "reference": "REF-32321899"
+        },
+        "invoice": null,
+        "settlement": {
+          "id": "STL-0061",
+          "amount": 463220.31,
+          "date": "2024-01-25",
+          "reference": "REF-32321899"
+        }
+      },
+      "matcher_reason": "Partial match \u2014 missing: ['invoice']. Found: bank=BNK-0061(T1,c=1.00) | settlement=STL-0061(T1,c=1.00)"
+    },
+    "safe_auto_resolved": true,
+    "original_status": "PARTIAL",
+    "confidence": 1.0,
+    "missing_sources": [
+      "invoice"
+    ],
+    "matched_sources": [
+      "bank",
+      "settlement"
+    ],
+    "explanation": "Ledger entry LED-0061 for Khanna, Mallick and Sunder (\u20b9463,220.31, Ref: REF-32321899, Date: 2024-01-24) is 100% verified across Bank Statement BNK-0061 (\u20b9463,220.31), Settlement STL-0061 (\u20b9463,220.31) with zero amount discrepancy. The invoice record is pending vendor generation or accounting sync, but physical cash movement is fully confirmed by the bank feed. The Exception Agent has safely auto-resolved this low-risk non-cash timing lag without risk of financial misstatement. Action Assigned: Auto-resolve: Non-cash timing lag (invoice missing)."
+  },
+  {
+    "ledger_id": "LED-0085",
+    "final_status": "SAFE_AUTO_RESOLVED",
+    "risk_level": "LOW",
+    "detailed_explanation": "Ledger entry LED-0085 for Grewal Inc (\u20b9444,911.50, Ref: REF-30863865, Date: 2024-01-30) is 100% verified across Bank Statement BNK-0085 (\u20b9444,911.50), Settlement STL-0085 (\u20b9444,911.50) with zero amount discrepancy. The invoice record is pending vendor generation or accounting sync, but physical cash movement is fully confirmed by the bank feed. The Exception Agent has safely auto-resolved this low-risk non-cash timing lag without risk of financial misstatement. Action Assigned: Auto-resolve: Non-cash timing lag (invoice missing).",
+    "recommended_action": "Auto-resolve: Non-cash timing lag (invoice missing)",
+    "evidence_summary": {
+      "ledger": {
+        "id": "LED-0085",
+        "amount": 444911.5,
+        "date": "2024-01-30",
+        "reference": "REF-30863865",
+        "counterparty": "Grewal Inc"
+      },
+      "matched_sources": [
+        "bank",
+        "settlement"
+      ],
+      "missing_sources": [
+        "invoice"
+      ],
+      "matched_records": {
+        "bank": {
+          "id": "BNK-0085",
+          "amount": 444911.5,
+          "date": "2024-01-30",
+          "reference": "REF-30863865"
+        },
+        "invoice": null,
+        "settlement": {
+          "id": "STL-0085",
+          "amount": 444911.5,
+          "date": "2024-01-31",
+          "reference": "REF-30863865"
+        }
+      },
+      "matcher_reason": "Partial match \u2014 missing: ['invoice']. Found: bank=BNK-0085(T1,c=1.00) | settlement=STL-0085(T1,c=1.00)"
+    },
+    "safe_auto_resolved": true,
+    "original_status": "PARTIAL",
+    "confidence": 1.0,
+    "missing_sources": [
+      "invoice"
+    ],
+    "matched_sources": [
+      "bank",
+      "settlement"
+    ],
+    "explanation": "Ledger entry LED-0085 for Grewal Inc (\u20b9444,911.50, Ref: REF-30863865, Date: 2024-01-30) is 100% verified across Bank Statement BNK-0085 (\u20b9444,911.50), Settlement STL-0085 (\u20b9444,911.50) with zero amount discrepancy. The invoice record is pending vendor generation or accounting sync, but physical cash movement is fully confirmed by the bank feed. The Exception Agent has safely auto-resolved this low-risk non-cash timing lag without risk of financial misstatement. Action Assigned: Auto-resolve: Non-cash timing lag (invoice missing)."
+  },
+  {
+    "ledger_id": "LED-0086",
+    "final_status": "SAFE_AUTO_RESOLVED",
+    "risk_level": "LOW",
+    "detailed_explanation": "Ledger entry LED-0086 for Bir, Keer and Raval (\u20b9141,237.26, Ref: REF-56020613, Date: 2024-03-10) is 100% verified across Bank Statement BNK-0086 (\u20b9141,237.26), Settlement STL-0086 (\u20b9141,237.26) with zero amount discrepancy. The invoice record is pending vendor generation or accounting sync, but physical cash movement is fully confirmed by the bank feed. The Exception Agent has safely auto-resolved this low-risk non-cash timing lag without risk of financial misstatement. Action Assigned: Auto-resolve: Non-cash timing lag (invoice missing).",
+    "recommended_action": "Auto-resolve: Non-cash timing lag (invoice missing)",
+    "evidence_summary": {
+      "ledger": {
+        "id": "LED-0086",
+        "amount": 141237.26,
+        "date": "2024-03-10",
+        "reference": "REF-56020613",
+        "counterparty": "Bir, Keer and Raval"
+      },
+      "matched_sources": [
+        "bank",
+        "settlement"
+      ],
+      "missing_sources": [
+        "invoice"
+      ],
+      "matched_records": {
+        "bank": {
+          "id": "BNK-0086",
+          "amount": 141237.26,
+          "date": "2024-03-10",
+          "reference": "REF-56020613"
+        },
+        "invoice": null,
+        "settlement": {
+          "id": "STL-0086",
+          "amount": 141237.26,
+          "date": "2024-03-11",
+          "reference": "REF-56020613"
+        }
+      },
+      "matcher_reason": "Partial match \u2014 missing: ['invoice']. Found: bank=BNK-0086(T1,c=1.00) | settlement=STL-0086(T1,c=1.00)"
+    },
+    "safe_auto_resolved": true,
+    "original_status": "PARTIAL",
+    "confidence": 1.0,
+    "missing_sources": [
+      "invoice"
+    ],
+    "matched_sources": [
+      "bank",
+      "settlement"
+    ],
+    "explanation": "Ledger entry LED-0086 for Bir, Keer and Raval (\u20b9141,237.26, Ref: REF-56020613, Date: 2024-03-10) is 100% verified across Bank Statement BNK-0086 (\u20b9141,237.26), Settlement STL-0086 (\u20b9141,237.26) with zero amount discrepancy. The invoice record is pending vendor generation or accounting sync, but physical cash movement is fully confirmed by the bank feed. The Exception Agent has safely auto-resolved this low-risk non-cash timing lag without risk of financial misstatement. Action Assigned: Auto-resolve: Non-cash timing lag (invoice missing)."
+  },
+  {
+    "ledger_id": "LED-0095",
+    "final_status": "PARTIAL",
+    "risk_level": "MEDIUM",
+    "detailed_explanation": "Ledger entry LED-0095 for Toor LLC (\u20b9215,178.46, Ref: REF-51373735, Date: 2024-02-07) has corroboration across Invoice INV-0095 (\u20b9215,178.46), Settlement STL-0095 (\u20b9215,178.46), but lacks a corresponding Bank Statement record. Because bank statements represent primary cash movement controls, missing cash proof poses an unverified cash risk. This transaction cannot be auto-resolved and is escalated to Finance Ops for manual bank feed verification. Action Assigned: Escalate: Missing primary bank feed \u2013 cash control risk.",
+    "recommended_action": "Escalate: Missing primary bank feed \u2013 cash control risk",
+    "evidence_summary": {
+      "ledger": {
+        "id": "LED-0095",
+        "amount": 215178.46,
+        "date": "2024-02-07",
+        "reference": "REF-51373735",
+        "counterparty": "Toor LLC"
+      },
+      "matched_sources": [
+        "invoice",
+        "settlement"
+      ],
+      "missing_sources": [
+        "bank"
+      ],
+      "matched_records": {
+        "bank": null,
+        "invoice": {
+          "id": "INV-0095",
+          "amount": 215178.46,
+          "date": "2024-02-07",
+          "reference": "REF-51373735"
+        },
+        "settlement": {
+          "id": "STL-0095",
+          "amount": 215178.46,
+          "date": "2024-02-07",
+          "reference": "REF-51373735"
+        }
+      },
+      "matcher_reason": "Partial match \u2014 missing: ['bank']. Found: invoice=INV-0095(T1,c=1.00) | settlement=STL-0095(T1,c=1.00)"
+    },
+    "safe_auto_resolved": false,
+    "original_status": "PARTIAL",
+    "confidence": 1.0,
+    "missing_sources": [
+      "bank"
+    ],
+    "matched_sources": [
+      "invoice",
+      "settlement"
+    ],
+    "explanation": "Ledger entry LED-0095 for Toor LLC (\u20b9215,178.46, Ref: REF-51373735, Date: 2024-02-07) has corroboration across Invoice INV-0095 (\u20b9215,178.46), Settlement STL-0095 (\u20b9215,178.46), but lacks a corresponding Bank Statement record. Because bank statements represent primary cash movement controls, missing cash proof poses an unverified cash risk. This transaction cannot be auto-resolved and is escalated to Finance Ops for manual bank feed verification. Action Assigned: Escalate: Missing primary bank feed \u2013 cash control risk."
+  }
+]

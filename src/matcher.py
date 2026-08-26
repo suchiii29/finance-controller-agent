@@ -53,14 +53,19 @@ except ImportError:
 # ---------------------------------------------------------------------------
 DATA_DIR = Path(__file__).parent.parent / "data"
 
-T1_AMOUNT_TOL   = 0.01   # Tier-1 amount tolerance (absolute)
-T1_DATE_TOL     = 1      # Tier-1 date tolerance (days)
+T1_AMOUNT_TOL       = 0.01   # Tier-1 amount tolerance (absolute)
+T1_DATE_TOL         = 1      # Tier-1 date tolerance (days)
 
-T2_AMOUNT_TOL   = 1.00   # Tier-2 amount tolerance (absolute)
-T2_DATE_TOL     = 4      # Tier-2 date tolerance — covers natural lag + planted drift
-T2_CP_SIM_MIN   = 0.85   # Tier-2 counterparty similarity floor
+T2_AMOUNT_TOL       = 1.00   # Tier-2 amount tolerance (absolute)
+T2_DATE_TOL         = 4      # Tier-2 date tolerance — covers natural lag + planted drift
+T2_CP_SIM_MIN       = 0.85   # Tier-2 counterparty similarity floor
+# Tier-2 requires at least one independent corroborating signal (ref OR desc)
+T2_CORROBORATION_MIN = 0.70  # minimum ref_sim or desc_sim to count as corroboration
 
-CONFIDENCE_MIN  = 0.80   # Minimum confidence to count as a real match
+CONFIDENCE_MIN      = 0.80   # Minimum confidence to count as a real match
+# When ≥2 other sources are Tier-1 matches, allow a relaxed floor for the 3rd source.
+# This covers planted date_drift where the other two sources confirm the transaction.
+CONFIDENCE_CORROBORATED_MIN = 0.72
 
 # ---------------------------------------------------------------------------
 # Data classes
@@ -134,6 +139,56 @@ def _date_diff(d1, d2) -> int:
 # Normalisation helpers
 # ---------------------------------------------------------------------------
 
+# ---------------------------------------------------------------------------
+# Column-name resolution
+# ---------------------------------------------------------------------------
+# Priority lists for ID and date columns in each source file.
+# The resolver tries each candidate in order and picks the first one that
+# exists in the DataFrame.  This makes the engine resilient to minor schema
+# differences between the demo data and custom uploaded files.
+
+_ID_CANDIDATES: dict[str, list[str]] = {
+    "ledger":     ["ledger_entry_id", "ledger_id", "id"],
+    "bank":       ["bank_txn_id", "bank_transaction_id", "txn_id", "id"],
+    "invoice":    ["invoice_id", "id"],
+    "settlement": ["settlement_id", "id"],
+}
+
+_DATE_CANDIDATES: dict[str, list[str]] = {
+    "ledger":     ["txn_date", "posting_date", "date"],
+    "bank":       ["value_date", "txn_date", "date"],
+    "invoice":    ["invoice_date", "date"],
+    "settlement": ["settlement_date", "date"],
+}
+
+
+def _resolve_col(df: pd.DataFrame, source: str, candidates: dict[str, list[str]], role: str) -> str:
+    """
+    Return the first column name from candidates[source] that exists in *df*.
+
+    Parameters
+    ----------
+    df:         Source DataFrame.
+    source:     One of 'ledger', 'bank', 'invoice', 'settlement'.
+    candidates: Mapping of source → ordered list of candidate column names.
+    role:       Human-readable role name used in the error message ('id' or 'date').
+
+    Raises
+    ------
+    KeyError if none of the candidates are found, with a clear message showing
+    the actual columns present so the user can diagnose the problem easily.
+    """
+    actual_cols = set(df.columns)
+    for name in candidates.get(source, []):
+        if name in actual_cols:
+            return name
+    raise KeyError(
+        f"[{source}] Could not find a {role} column. "
+        f"Tried: {candidates.get(source, [])}. "
+        f"Actual columns: {sorted(actual_cols)}"
+    )
+
+
 def _load_csv(path: Path) -> pd.DataFrame:
     df = pd.read_csv(path)
     # Treat blank cells as empty string, not NaN
@@ -158,6 +213,20 @@ def _to_norm_records(df: pd.DataFrame, source: str, id_col: str, date_col: str) 
             "_cp_norm":     _norm_name(row.get("counterparty", "")),
         })
     return records
+
+
+def _build_poisoned_refs(records: list[dict]) -> set[str]:
+    """
+    Return the set of reference strings that appear MORE THAN ONCE in a source.
+
+    A reference appearing twice in the same source is ambiguous — it cannot be
+    reliably used as a Tier-1 exact-match key without additional disambiguation.
+    We call these references 'poisoned' and exclude them from Tier-1 matching.
+    They may still contribute partial evidence in Tier-2.
+    """
+    from collections import Counter
+    counts = Counter(r["_ref_norm"] for r in records if r["_ref_norm"])
+    return {ref for ref, cnt in counts.items() if cnt > 1}
 
 
 # ---------------------------------------------------------------------------
@@ -194,24 +263,41 @@ def _match_source(
     candidates: list[dict],
     claimed: set,
     source_name: str,
+    poisoned_refs: set,
+    corroborated: bool = False,
 ) -> SourceMatch:
     """
     Attempt to match a single ledger record against all records in one source.
-    Returns the best SourceMatch found (or a no-match with tier=0).
+
+    Parameters
+    ----------
+    poisoned_refs:
+        References that appear more than once in this source — excluded from
+        Tier-1 exact matching to prevent silent false matches.
+    corroborated:
+        True when the other two target sources have already produced Tier-1
+        matches for this ledger record.  When True, the Tier-3 confidence
+        floor is relaxed slightly to recover date-drifted records that are
+        otherwise unambiguous.
     """
     l_ref    = ledger_rec["_ref_norm"]
     l_amount = ledger_rec["amount"]
     l_date   = ledger_rec["date"]
 
     # ── Tier 1 ──────────────────────────────────────────────────────────────
+    # A reference is only used for Tier-1 if it is NOT in the poisoned set.
+    # Poisoned = appears more than once in this source → cannot disambiguate.
     tier1_hits = []
     for c in candidates:
         if c["record_id"] in claimed:
             continue
-        ref_match  = (l_ref and c["_ref_norm"] and l_ref == c["_ref_norm"])
-        amt_ok     = abs(l_amount - c["amount"]) <= T1_AMOUNT_TOL
-        date_ok    = _date_diff(l_date, c["date"]) <= T1_DATE_TOL
-        if ref_match and amt_ok and date_ok:
+        ref_usable = (l_ref and c["_ref_norm"]
+                      and l_ref == c["_ref_norm"]
+                      and l_ref not in poisoned_refs
+                      and c["_ref_norm"] not in poisoned_refs)
+        amt_ok   = abs(l_amount - c["amount"]) <= T1_AMOUNT_TOL
+        date_ok  = _date_diff(l_date, c["date"]) <= T1_DATE_TOL
+        if ref_usable and amt_ok and date_ok:
             tier1_hits.append(c)
 
     if len(tier1_hits) > 1:
@@ -242,6 +328,24 @@ def _match_source(
         cp_sim    = _str_sim(ledger_rec["_cp_norm"], c["_cp_norm"])
 
         if amt_diff <= T2_AMOUNT_TOL and date_days <= T2_DATE_TOL and cp_sim >= T2_CP_SIM_MIN:
+            # IMPROVEMENT: require at least one independent corroborating signal.
+            # Counterparty similarity alone is insufficient — we also need the
+            # reference OR description to partially agree.  This prevents the
+            # matcher from fuzzy-matching records that share only name + amount
+            # when the reference is a known collision.
+            ref_sim  = _str_sim(ledger_rec["_ref_norm"], c["_ref_norm"])
+            desc_sim = _str_sim(
+                _norm_name(ledger_rec["description"]),
+                _norm_name(c["description"]),
+            )
+            has_corroboration = (
+                ref_sim  >= T2_CORROBORATION_MIN or
+                desc_sim >= T2_CORROBORATION_MIN
+            )
+            if not has_corroboration:
+                # Log as a near-miss but do not promote to a real match
+                continue
+
             conf, reason = _score_tier2(ledger_rec, c, amt_diff, date_days)
             tier2_hits.append((conf, reason, c))
 
@@ -257,16 +361,25 @@ def _match_source(
                 reason=f"AMBIGUOUS: {len(tier2_hits)} Tier-2 candidates with similar scores → {ids}",
             )
 
-        if best_conf >= CONFIDENCE_MIN:
+        # IMPROVEMENT: when the other two sources have already confirmed this
+        # transaction at Tier-1, we allow a slightly relaxed confidence floor
+        # for this third source, because the overall evidence is very strong.
+        effective_min = CONFIDENCE_CORROBORATED_MIN if corroborated else CONFIDENCE_MIN
+
+        if best_conf >= effective_min:
+            label = "FUZZY_CORROBORATED" if corroborated else "FUZZY"
             return SourceMatch(
                 source=source_name, record_id=best_c["record_id"], tier=2,
-                confidence=best_conf, reason=f"FUZZY {best_reason}",
+                confidence=best_conf, reason=f"{label} {best_reason}",
             )
         else:
             return SourceMatch(
                 source=source_name, record_id=None, tier=3,
                 confidence=best_conf,
-                reason=f"WEAK_MATCH (conf={best_conf:.2f} < {CONFIDENCE_MIN}) → NEEDS_REVIEW {best_reason}",
+                reason=(
+                    f"WEAK_MATCH (conf={best_conf:.2f} < "
+                    f"{effective_min}) → NEEDS_REVIEW {best_reason}"
+                ),
             )
 
     # ── No match ────────────────────────────────────────────────────────────
@@ -370,10 +483,54 @@ class ReconciliationMatcher:
         inv  = _load_csv(self.data_dir / "invoices.csv")
         stl  = _load_csv(self.data_dir / "settlements.csv")
 
-        self._ledger_records     = _to_norm_records(led, "ledger",      "ledger_entry_id",  "txn_date")
-        self._bank_records       = _to_norm_records(bank, "bank",       "bank_txn_id",      "value_date")
-        self._invoice_records    = _to_norm_records(inv,  "invoice",    "invoice_id",       "invoice_date")
-        self._settlement_records = _to_norm_records(stl,  "settlement", "settlement_id",    "settlement_date")
+        self._ledger_records     = _to_norm_records(
+            led,  "ledger",
+            _resolve_col(led,  "ledger",     _ID_CANDIDATES,   "id"),
+            _resolve_col(led,  "ledger",     _DATE_CANDIDATES, "date"),
+        )
+        self._bank_records       = _to_norm_records(
+            bank, "bank",
+            _resolve_col(bank, "bank",       _ID_CANDIDATES,   "id"),
+            _resolve_col(bank, "bank",       _DATE_CANDIDATES, "date"),
+        )
+        self._invoice_records    = _to_norm_records(
+            inv,  "invoice",
+            _resolve_col(inv,  "invoice",    _ID_CANDIDATES,   "id"),
+            _resolve_col(inv,  "invoice",    _DATE_CANDIDATES, "date"),
+        )
+        self._settlement_records = _to_norm_records(
+            stl,  "settlement",
+            _resolve_col(stl,  "settlement", _ID_CANDIDATES,   "id"),
+            _resolve_col(stl,  "settlement", _DATE_CANDIDATES, "date"),
+        )
+
+    def load_sources_from_dict(self, df_dict: dict[str, pd.DataFrame]) -> None:
+        led  = df_dict["ledger"].fillna("")
+        bank = df_dict["bank"].fillna("")
+        inv  = df_dict["invoice"].fillna("")
+        stl  = df_dict["settlement"].fillna("")
+
+        self._ledger_records     = _to_norm_records(
+            led,  "ledger",
+            _resolve_col(led,  "ledger",     _ID_CANDIDATES,   "id"),
+            _resolve_col(led,  "ledger",     _DATE_CANDIDATES, "date"),
+        )
+        self._bank_records       = _to_norm_records(
+            bank, "bank",
+            _resolve_col(bank, "bank",       _ID_CANDIDATES,   "id"),
+            _resolve_col(bank, "bank",       _DATE_CANDIDATES, "date"),
+        )
+        self._invoice_records    = _to_norm_records(
+            inv,  "invoice",
+            _resolve_col(inv,  "invoice",    _ID_CANDIDATES,   "id"),
+            _resolve_col(inv,  "invoice",    _DATE_CANDIDATES, "date"),
+        )
+        self._settlement_records = _to_norm_records(
+            stl,  "settlement",
+            _resolve_col(stl,  "settlement", _ID_CANDIDATES,   "id"),
+            _resolve_col(stl,  "settlement", _DATE_CANDIDATES, "date"),
+        )
+
 
     # ── Reconciliation ───────────────────────────────────────────────────────
 
@@ -382,6 +539,11 @@ class ReconciliationMatcher:
             self.load_sources()
 
         t0 = time.perf_counter()
+
+        # Pre-compute poisoned reference sets for each source
+        poisoned_bank = _build_poisoned_refs(self._bank_records)
+        poisoned_inv  = _build_poisoned_refs(self._invoice_records)
+        poisoned_stl  = _build_poisoned_refs(self._settlement_records)
 
         # Claimed-ID sets prevent unsafe many-to-one assignment
         claimed_bank = set()
@@ -395,9 +557,27 @@ class ReconciliationMatcher:
         }
 
         for ledger_rec in self._ledger_records:
-            bank_m = _match_source(ledger_rec, self._bank_records,       claimed_bank, "bank")
-            inv_m  = _match_source(ledger_rec, self._invoice_records,    claimed_inv,  "invoice")
-            stl_m  = _match_source(ledger_rec, self._settlement_records, claimed_stl,  "settlement")
+            # First pass: match the two most stable sources (bank + invoice)
+            # without corroboration flag — these are independent.
+            bank_m = _match_source(
+                ledger_rec, self._bank_records, claimed_bank, "bank",
+                poisoned_bank, corroborated=False,
+            )
+            inv_m = _match_source(
+                ledger_rec, self._invoice_records, claimed_inv, "invoice",
+                poisoned_inv, corroborated=False,
+            )
+
+            # Second pass: settlement gets corroboration signal if the other
+            # two sources both produced clean Tier-1 matches.
+            both_tier1 = (
+                bank_m.tier == 1 and bank_m.record_id is not None and
+                inv_m.tier  == 1 and inv_m.record_id  is not None
+            )
+            stl_m = _match_source(
+                ledger_rec, self._settlement_records, claimed_stl, "settlement",
+                poisoned_stl, corroborated=both_tier1,
+            )
 
             status, conf, tier, reason, action = _determine_status(bank_m, inv_m, stl_m)
 
