@@ -1,0 +1,100 @@
+bank_txn_id,value_date,amount,description,counterparty,reference,bank_channel
+BNK-0001,2024-06-12,56109.87,"Consulting fee - Choudhury, Bakshi and Maharaj","Choudhury, Bakshi and Maharaj",REF-42868828,RTGS
+BNK-0002,2024-02-27,70199.2,Invoice settlement - Kapoor and Sons,Kapoor and Sons,REF-83197857,RTGS
+BNK-0003,2024-01-23,295451.01,"Payment for services rendered - Chaudry, Chahal and Sami","Chaudry, Chahal and Sami",REF-13999315,UPI
+BNK-0004,2024-01-24,109709.67,Maintenance contract - Balan Inc,Balan Inc,REF-90801586,UPI
+BNK-0005,2024-01-07,280807.88,Maintenance contract - Kaul PLC,Kaul PLC,REF-66306997,IMPS
+BNK-0006,2024-02-26,224879.92,"Consulting fee - Bala, Issac and Saini","Bala, Issac and Saini",REF-10872248,UPI
+BNK-0007,2024-02-10,349220.63,Vendor payment - Sen PLC,Sen PLC,REF-47295260,NEFT
+BNK-0008,2024-02-09,108049.22,Vendor payment - Ahuja-Dutta,Ahuja-Dutta,REF-23718431,IMPS
+BNK-0009,2024-01-24,190273.69,"Vendor payment - Sami, Oak and Mall","Sami, Oak and Mall",REF-56164955,IMPS
+BNK-0010,2024-06-03,132628.17,Payment for services rendered - Kale LLC,Kale LLC,REF-71662963,RTGS
+BNK-0011,2024-05-17,62850.67,Professional services - Chanda Group,Chanda Group,REF-20576383,UPI
+BNK-0012,2024-05-21,146942.55,Project milestone payment - Parmer LLC,Parmer LLC,REF-58537831,IMPS
+BNK-0013,2024-05-27,96548.15,"Invoice settlement - Lalla, Bassi and Sharaf","Lalla, Bassi and Sharaf",REF-16150444,UPI
+BNK-0014,2024-06-18,114335.19,"Consulting fee - Dash, Radhakrishnan and Brar","Dash, Radhakrishnan and Brar",REF-20709497,UPI
+BNK-0015,2024-02-29,433308.59,"Professional services - Memon, Pathak and Handa","Memon, Pathak and Handa",REF-47308985,UPI
+BNK-0016,2024-04-26,318024.38,"Vendor payment - Boase, Bath and Kari","Boase, Bath and Kari",REF-31831063,RTGS
+BNK-0017,2024-04-04,177957.71,Consulting fee - Buch-Kaul,Buch-Kaul,REF-96977837,UPI
+BNK-0018,2024-01-19,304760.94,Monthly retainer - Rai LLC,Rai LLC,REF-81691040,RTGS
+BNK-0019,2024-03-03,82119.55,Professional services - Patla-Gaba,Patla-Gaba,REF-46231783,NEFT
+BNK-0020,2024-06-12,344236.9,Software subscription - Pant-Kadakia,Pant-Kadakia,REF-53524491,IMPS
+BNK-0021,2024-01-18,114909.51,"Payment for services rendered - Loke, Bora and Garg","Loke, Bora and Garg",REF-52339391,NEFT
+BNK-0022,2024-04-12,134236.57,"Software subscription - Konda, Gade and Shere","Konda, Gade and Shere",REF-86125617,RTGS
+BNK-0023,2024-03-21,106706.96,Annual license fee - Madan-Kanda,Madan-Kanda,REF-63100814,IMPS
+BNK-0024,2024-06-13,229696.5,"Consulting fee - Nair, Bhalla and Karnik","Nair, Bhalla and Karnik",REF-28740864,RTGS
+BNK-0025,2024-03-04,372622.0,Maintenance contract - Mutti Group,Mutti Group,REF-45264581,RTGS
+BNK-0027,2024-04-02,110050.72,"Monthly retainer - Murty, Kala and Tata","Murty, Kala and Tata",REF-78387461,RTGS
+BNK-0028,2024-05-06,45909.25,Payment for services rendered - Shanker-Dhar,Shanker-Dhar,REF-24716857,NEFT
+BNK-0029,2024-02-09,313909.3,Professional services - Dewan-Koshy,Dewan-Koshy,REF-90048665,NEFT
+BNK-0030,2024-01-17,192691.27,"Project milestone payment - Yohannan, Lall and Sangha","Yohannan, Lall and Sangha",REF-72820592,RTGS
+BNK-0031,2024-05-15,126081.35,"Maintenance contract - Rastogi, Pathak and Kanda","Rastogi, Pathak and Kanda",REF-11540956,UPI
+BNK-0032,2024-06-20,360500.55,Maintenance contract - Upadhyay Group,Upadhyay Group,REF-45812670,UPI
+BNK-0033,2024-06-13,170417.65,Consulting fee - Batta Inc,Batta Inc,REF-68353204,UPI
+BNK-0034,2024-02-10,227134.99,Consulting fee - Dutta Ltd,Dutta Ltd,REF-77187530,RTGS
+BNK-0035,2024-02-15,254087.0,Invoice settlement - Bhatt-Rajan,Bhatt-Rajan,REF-93926371,UPI
+BNK-0036,2024-03-17,420913.84,Maintenance contract - Sidhu-Wadhwa,Sidhu-Wadhwa,REF-91734598,UPI
+BNK-0037,2024-02-20,76843.21,Monthly retainer - Apte-Contractor,Apte-Contractor,REF-82394227,UPI
+BNK-0038,2024-05-15,459287.5,"Project milestone payment - Yadav, Loke and Oak","Yadav, Loke and Oak",REF-53507489,RTGS
+BNK-0039,2024-05-05,10228.63,Vendor payment - Memon Group,Memon Group,REF-51273847,RTGS
+BNK-0040,2024-03-02,29433.62,Project milestone payment - Setty Inc,Setty Inc,REF-20570592,NEFT
+BNK-0041,2024-01-22,366087.84,"Invoice settlement - Lall, Tella and Gokhale","Lall, Tella and Gokhale",REF-81498611,NEFT
+BNK-0042,2024-02-02,64631.54,"Annual license fee - Cherian, Misra and Tripathi","Cherian, Misra and Tripathi",REF-83793389,UPI
+BNK-0043,2024-02-12,132895.79,"Project milestone payment - Issac, Dua and Prakash","Issac, Dua and Prakash",REF-66792612,RTGS
+BNK-0044,2024-02-24,464492.29,Software subscription - Zacharia PLC,Zacharia PLC,REF-51837852,RTGS
+BNK-0045,2024-04-12,497577.1,Vendor payment - Naik Group,Naik Group,REF-68800797,UPI
+BNK-0046,2024-05-12,226017.33,Software subscription - Choudhury LLC,Choudhury LLC,REF-40158366,NEFT
+BNK-0047,2024-01-17,169373.74,Project milestone payment - Khatri-Bhardwaj,Khatri-Bhardwaj,REF-84346088,RTGS
+BNK-0048,2024-02-28,294425.84,Payment for services rendered - Brar Inc,Brar Inc,REF-19528530,NEFT
+BNK-0049,2024-06-30,315735.93,"Software subscription - Sunder, Biswas and Walia","Sunder, Biswas and Walia",REF-19046318,UPI
+BNK-0050,2024-01-09,429887.88,Invoice settlement - Dave Ltd,Dave Ltd,REF-79008866,RTGS
+BNK-0051,2024-03-01,139599.39,Annual license fee - Gandhi-Lanka,Gandhi-Lanka,REF-38754377,UPI
+BNK-0052,2024-05-18,66589.77,"Project milestone payment - Sampath, Kakar and Zacharia","Sampath, Kakar and Zacharia",REF-87337818,IMPS
+BNK-0053,2024-05-01,121877.12,"Annual license fee - Iyer, Muni and Rastogi","Iyer, Muni and Rastogi",REF-64634663,UPI
+BNK-0054,2024-02-18,47615.74,"Professional services - Prakash, Sarma and Varughese","Prakash, Sarma and Varughese",REF-57553014,UPI
+BNK-0055,2024-04-18,205845.59,Payment for services rendered - Dara-Kota,Dara-Kota,REF-97705310,UPI
+BNK-0056,2024-06-14,49659.73,Professional services - Bhatt LLC,Bhatt LLC,REF-55540424,RTGS
+BNK-0057,2024-01-28,124703.84,Software subscription - Karpe PLC,Karpe PLC,REF-81979055,UPI
+BNK-0058,2024-04-24,70521.06,Monthly retainer - Amble Inc,Amble Inc,REF-47385696,UPI
+BNK-0059,2024-04-28,125278.32,"Invoice settlement - Bhargava, Karnik and Bir","Bhargava, Karnik and Bir",REF-69476001,IMPS
+BNK-0060,2024-05-20,49405.41,Maintenance contract - Narayanan Inc,Narayanan Inc,REF-11980765,RTGS
+BNK-0061,2024-01-24,463220.31,"Software subscription - Khanna, Mallick and Sunder","Khanna, Mallick and Sunder",REF-32321899,IMPS
+BNK-0062,2024-04-14,243077.74,Software subscription - Zacharia and Sons,Zacharia and Sons,REF-63826716,UPI
+BNK-0063,2024-01-16,82736.24,"Payment for services rendered - Solanki, Kibe and Solanki","Solanki, Kibe and Solanki",REF-62401521,RTGS
+BNK-0064,2024-03-08,463295.78,Annual license fee - Gupta-Chandra,Gupta-Chandra,REF-48285503,IMPS
+BNK-0065,2024-04-18,348447.46,Maintenance contract - Sankar LLC,Sankar LLC,REF-98834863,UPI
+BNK-0066,2024-05-04,77821.01,Consulting fee - Roy-Sibal,Roy-Sibal,REF-39219319,NEFT
+BNK-0067,2024-01-15,289800.56,"Maintenance contract - Bhagat, Chaudhari and Bhat","Bhagat, Chaudhari and Bhat",REF-18181586,IMPS
+BNK-0068,2024-03-21,29054.05,Project milestone payment - Nori-Chopra,Nori-Chopra,REF-73993471,RTGS
+BNK-0069,2024-05-08,459733.87,Maintenance contract - Handa and Sons,Handa and Sons,REF-31130263,IMPS
+BNK-0070,2024-01-15,480409.06,"Invoice settlement - Sen, Dey and Sami","Sen, Dey and Sami",REF-34941004,IMPS
+BNK-0071,2024-01-18,297720.04,Software subscription - Mallick Group,Mallick Group,REF-64193837,IMPS
+BNK-0072,2024-01-31,470827.27,Project milestone payment - Borra Group,Borra Group,REF-43046464,NEFT
+BNK-0073,2024-05-28,297462.32,"Project milestone payment - Chaudhari, Bedi and Zachariah","Chaudhari, Bedi and Zachariah",REF-21003626,RTGS
+BNK-0074,2024-04-17,328857.9,Project milestone payment - Chander and Sons,Chander and Sons,REF-80166708,RTGS
+BNK-0075,2024-03-21,467385.78,Software subscription - Ray Group,Ray Group,REF-99889098,RTGS
+BNK-0076,2024-03-21,119723.63,Professional services - Kala-Rattan,Kala-Rattan,REF-27566185,UPI
+BNK-0077,2024-06-20,322927.64,Annual license fee - Gala Group,Gala Group,REF-52436584,RTGS
+BNK-0078,2024-01-19,5153.07,Project milestone payment - Ramakrishnan LLC,Ramakrishnan LLC,REF-85563727,RTGS
+BNK-0079,2024-01-26,37093.73,Software subscription - Mangal-Sampath,Mangal-Sampath,REF-77898694,NEFT
+BNK-0080,2024-03-08,66662.06,"Vendor payment - Sur, Dubey and Gupta","Sur, Dubey and Gupta",REF-19233013,UPI
+BNK-0081,2024-03-03,185078.78,Monthly retainer - Kalla-Bhardwaj,Kalla-Bhardwaj,REF-68812137,UPI
+BNK-0082,2024-05-19,351918.19,"Project milestone payment - Bhat, Murthy and Bhandari","Bhat, Murthy and Bhandari",REF-97775215,IMPS
+BNK-0083,2024-05-15,4407.64,Maintenance contract - Sood PLC,Sood PLC,REF-50181935,UPI
+BNK-0084,2024-06-18,52241.46,"Monthly retainer - Dugar, Bhandari and Trivedi","Dugar, Bhandari and Trivedi",REF-45496015,UPI
+BNK-0085,2024-01-30,444911.5,Maintenance contract - Grewal Inc,Grewal Inc,REF-30863865,NEFT
+BNK-0086,2024-03-10,141237.26,"Software subscription - Bir, Keer and Raval","Bir, Keer and Raval",REF-56020613,RTGS
+BNK-0087,2024-02-22,343904.82,Consulting fee - Koshy PLC,Koshy PLC,REF-77834855,UPI
+BNK-0088,2024-05-05,125935.07,"Payment for services rendered - Baral, Bumb and Saini","Baral, Bumb and Saini",REF-22388090,UPI
+BNK-0089,2024-06-11,212076.1,"Consulting fee - Virk, Mutti and Lal","Virk, Mutti and Lal",REF-15917225,NEFT
+BNK-0090,2024-01-01,167111.49,Monthly retainer - Murthy and Sons,Murthy and Sons,REF-95511909,UPI
+BNK-0091,2024-03-08,81210.2,Annual license fee - Randhawa-Deep,Randhawa-Deep,REF-84045292,UPI
+BNK-0092,2024-06-29,214129.62,"Payment for services rendered - Mital, Shankar and Mutti","Mital, Shankar and Mutti",REF-25015458,NEFT
+BNK-0093,2024-01-20,472552.94,Monthly retainer - Andra Group,Andra Group,REF-83227889,IMPS
+BNK-0094,2024-01-10,417380.21,"Project milestone payment - Chaudhry, Borah and Yogi","Chaudhry, Borah and Yogi",REF-84158663,IMPS
+BNK-0095,2024-02-07,215216.26,Payment for services rendered - Toor LLC,Toor LLC,REF-51373735,RTGS
+BNK-0096,2024-04-03,449541.25,Payment for services rendered - Palla Inc,Palla Inc,REF-58024342,UPI
+BNK-0097,2024-02-23,341192.31,Invoice settlement - Pingle LLC,Pingle LLC,REF-57469942,RTGS
+BNK-0098,2024-05-23,442125.28,Professional services - Sarma PLC,Sarma PLC,REF-93303777,IMPS
+BNK-0099,2024-02-09,462919.03,"Software subscription - Mittal, Wadhwa and Anand","Mittal, Wadhwa and Anand",REF-31810617,UPI
+BNK-0100,2024-02-15,440767.39,"Payment for services rendered - Mistry, Chawla and Desai","Mistry, Chawla and Desai",REF-34073380,UPI
