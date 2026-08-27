@@ -12,7 +12,7 @@
 | **Safely Auto-Resolved (AI Agent)** | 9 | 9.1% |
 | **Still Escalated Exceptions (Finance Ops)** | 3 | 3.0% |
 | **Total Effective Automation Rate** | **96 / 99** | **97.0%** |
-| **Processing Throughput** | **192 rec/sec** | — |
+| **Processing Throughput** | **255 rec/sec** | — |
 
 > **Financial Safety Statement:**
 > The system operates under strict financial control policies. Only single non-cash timing lags with 100% Tier-1 corroboration and zero collision risk are safely auto-resolved (9 cases). All 3 remaining risk cases (such as missing bank statement feeds) are safely escalated to Finance Ops with detailed root-cause explanations.
@@ -46,13 +46,22 @@
 
 ---
 
-## 4. System Performance against Ground Truth
+## 4. Evaluation Against Ground Truth
 
-- **Match Precision**: 87.9%
-- **Match Recall**: 100.0%
-- **F1 Score**: 93.5%
-- **False Negatives**: 0
-- **False Positives**: 12
+| Metric | Value |
+| :--- | :--- |
+| **Correct full matches** | 87 |
+| **Correct partial detections** | 6 |
+| **Correctly escalated (unresolved)** | 6 |
+| **Incorrect automatic matches** | 0 |
+| **Missed resolvable transactions** | 0 |
+| **Incorrectly auto-resolved** | 0 |
+| **Match precision** | 100.0% |
+| **Match recall** | 100.0% |
+| **Match F1** | 100.0% |
+| **Exception detection rate** | 100.0% |
+| **Canonical transactions (total)** | 100 |
+| **No-ledger-anchor (excluded)** | 1 (CAN-0090) |
 
 ---
 

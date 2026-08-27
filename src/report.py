@@ -96,13 +96,22 @@ def generate_final_report(
     md_content += f"""
 ---
 
-## 4. System Performance against Ground Truth
+## 4. Evaluation Against Ground Truth
 
-- **Match Precision**: {evaluation_result.precision * 100:.1f}%
-- **Match Recall**: {evaluation_result.recall * 100:.1f}%
-- **F1 Score**: {evaluation_result.f1 * 100:.1f}%
-- **False Negatives**: {evaluation_result.false_negatives}
-- **False Positives**: {evaluation_result.false_positives}
+| Metric | Value |
+| :--- | :--- |
+| **Correct full matches** | {evaluation_result.correct_full_matches} |
+| **Correct partial detections** | {evaluation_result.correct_partial_detections} |
+| **Correctly escalated (unresolved)** | {evaluation_result.correctly_escalated} |
+| **Incorrect automatic matches** | {evaluation_result.incorrect_full_matches} |
+| **Missed resolvable transactions** | {evaluation_result.missed_resolvable} |
+| **Incorrectly auto-resolved** | {evaluation_result.incorrectly_auto_resolved} |
+| **Match precision** | {evaluation_result.match_precision * 100:.1f}% |
+| **Match recall** | {evaluation_result.match_recall * 100:.1f}% |
+| **Match F1** | {evaluation_result.match_f1 * 100:.1f}% |
+| **Exception detection rate** | {evaluation_result.exception_detection_rate * 100:.1f}% |
+| **Canonical transactions (total)** | {evaluation_result.total_canonical} |
+| **No-ledger-anchor (excluded)** | {evaluation_result.ledger_missing_in_gt} (CAN-0090) |
 
 ---
 

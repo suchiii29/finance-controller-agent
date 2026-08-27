@@ -3,12 +3,10 @@ app.py
 ======
 AI Finance Controller Agent — Streamlit Web Application
 Razorpay AI Buildathon Track 04
-
-Usage:
-    streamlit run app.py
 """
 
 import time
+import textwrap
 import pandas as pd
 import streamlit as st
 from pathlib import Path
@@ -22,54 +20,20 @@ from src.report import generate_final_report
 # Streamlit Page Config
 # ---------------------------------------------------------------------------
 st.set_page_config(
-    page_title="AI Finance Controller Agent",
-    page_icon="🤖",
+    page_title="Finance Controller Agent | AI Reconciliation",
+    page_icon="⚡",
     layout="wide",
     initial_sidebar_state="expanded"
 )
 
-# Custom styling for clean, calm interface
-st.markdown("""
-<style>
-    .main-title {
-        font-size: 2.3rem;
-        font-weight: 800;
-        color: #0F172A;
-        margin-bottom: 0.3rem;
-    }
-    .main-sub {
-        font-size: 1.1rem;
-        color: #475569;
-        margin-bottom: 1.8rem;
-        line-height: 1.5;
-    }
-    .agent-card {
-        background-color: #F8FAFC;
-        border: 1px solid #E2E8F0;
-        border-radius: 10px;
-        padding: 1.2rem;
-        margin-bottom: 1rem;
-    }
-    .badge-auto {
-        background-color: #DCFCE7;
-        color: #166534;
-        font-weight: 600;
-        padding: 0.2rem 0.6rem;
-        border-radius: 6px;
-        font-size: 0.85rem;
-    }
-    .badge-esc {
-        background-color: #FEE2E2;
-        color: #991B1B;
-        font-weight: 600;
-        padding: 0.2rem 0.6rem;
-        border-radius: 6px;
-        font-size: 0.85rem;
-    }
-</style>
-""", unsafe_allow_html=True)
+# Load External CSS
+css_path = Path(__file__).parent / "assets" / "styles.css"
+if css_path.exists():
+    st.html(css_path)
 
-
+# ---------------------------------------------------------------------------
+# Pipeline Execution Helper
+# ---------------------------------------------------------------------------
 def run_reconciliation(custom_sources=None):
     """Run full reconciliation pipeline."""
     matcher = ReconciliationMatcher()
@@ -94,18 +58,257 @@ def run_reconciliation(custom_sources=None):
     return matcher_res, source_records, analyses, eval_res
 
 
+# ---------------------------------------------------------------------------
+# Main App Layout
+# ---------------------------------------------------------------------------
 def main():
-    # Header
-    st.markdown('<div class="main-title">🤖 AI Finance Controller Agent</div>', unsafe_allow_html=True)
-    st.markdown(
-        '<div class="main-sub">Upload your financial records from multiple sources. '
-        'The AI agent will reconcile them and tell you what it could safely match and what still needs human review.</div>',
-        unsafe_allow_html=True
-    )
+    # 1. TOP INFORMATION STRIP
+    st.html(textwrap.dedent("""
+    <div class="fc-strip">
+        <div class="fc-strip-left">
+            <span class="fc-pill">Finance Controller</span>
+            <span class="fc-strip-msg">AI-powered finance operations</span>
+            <span class="fc-strip-sub">&nbsp;•&nbsp; Reconcile records, surface exceptions, and close workflows faster.</span>
+        </div>
+        <div>
+            <a href="#workspace" class="fc-strip-btn">Explore Controller</a>
+        </div>
+    </div>
+    """))
 
-    # Sidebar Options
-    st.sidebar.image("https://img.icons8.com/isometric/100/bank-building.png", width=56)
-    st.sidebar.title("Agent Controls")
+    # 2. MAIN NAVIGATION & 3. MEGA MENU
+    st.html(textwrap.dedent("""
+    <div class="fc-nav">
+        <div class="fc-nav-brand">
+            <div class="fc-logo-mark">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="2" y="5" width="20" height="14" rx="2"/>
+                    <line x1="2" y1="10" x2="22" y2="10"/>
+                </svg>
+            </div>
+            <span class="fc-nav-name">Finance Controller Agent</span>
+        </div>
+
+        <div class="fc-nav-links">
+            <div class="fc-dropdown">
+                <span class="fc-nav-link">
+                    Controller
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-left:4px; vertical-align:middle;">
+                        <path d="M6 9l6 6 6-6"/>
+                    </svg>
+                </span>
+                <div class="fc-megamenu">
+                    <div class="fc-menu-heading">FINANCE OPERATIONS</div>
+                    <div class="fc-menu-cols">
+                        <div>
+                            <a href="#workspace" class="fc-menu-item">
+                                <div class="fc-menu-icon">
+                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2F5BFF" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                                </div>
+                                <div>
+                                    <div class="fc-menu-label">Reconciliation</div>
+                                    <div class="fc-menu-desc">Match financial records across sources</div>
+                                </div>
+                            </a>
+                            <a href="#exceptions" class="fc-menu-item">
+                                <div class="fc-menu-icon">
+                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2F5BFF" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                                </div>
+                                <div>
+                                    <div class="fc-menu-label">Exception Center</div>
+                                    <div class="fc-menu-desc">Review unresolved finance issues</div>
+                                </div>
+                            </a>
+                            <a href="#workspace" class="fc-menu-item">
+                                <div class="fc-menu-icon">
+                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2F5BFF" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+                                </div>
+                                <div>
+                                    <div class="fc-menu-label">Settlement Review</div>
+                                    <div class="fc-menu-desc">Verify settlement consistency</div>
+                                </div>
+                            </a>
+                        </div>
+
+                        <div>
+                            <a href="#workspace" class="fc-menu-item">
+                                <div class="fc-menu-icon">
+                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2F5BFF" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+                                </div>
+                                <div>
+                                    <div class="fc-menu-label">Smart Matching</div>
+                                    <div class="fc-menu-desc">Find high-confidence record relationships</div>
+                                </div>
+                            </a>
+                            <a href="#exceptions" class="fc-menu-item">
+                                <div class="fc-menu-icon">
+                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2F5BFF" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+                                </div>
+                                <div>
+                                    <div class="fc-menu-label">Variance Detection</div>
+                                    <div class="fc-menu-desc">Surface amount, date & tax discrepancies</div>
+                                </div>
+                            </a>
+                            <a href="#exceptions" class="fc-menu-item">
+                                <div class="fc-menu-icon">
+                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2F5BFF" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                                </div>
+                                <div>
+                                    <div class="fc-menu-label">Tax Verification</div>
+                                    <div class="fc-menu-desc">Check tax-line consistency</div>
+                                </div>
+                            </a>
+                        </div>
+
+                        <div>
+                            <a href="#audit-log" class="fc-menu-item">
+                                <div class="fc-menu-icon">
+                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2F5BFF" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                                </div>
+                                <div>
+                                    <div class="fc-menu-label">Audit Trail</div>
+                                    <div class="fc-menu-desc">Track every reconciliation decision</div>
+                                </div>
+                            </a>
+                            <a href="#analytics" class="fc-menu-item">
+                                <div class="fc-menu-icon">
+                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2F5BFF" stroke-width="2"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/></svg>
+                                </div>
+                                <div>
+                                    <div class="fc-menu-label">Finance Insights</div>
+                                    <div class="fc-menu-desc">Understand reconciliation performance</div>
+                                </div>
+                            </a>
+                            <a href="#audit-log" class="fc-menu-item">
+                                <div class="fc-menu-icon">
+                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2F5BFF" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                                </div>
+                                <div>
+                                    <div class="fc-menu-label">Controller Assistant</div>
+                                    <div class="fc-menu-desc">Ask grounded questions on operations</div>
+                                </div>
+                            </a>
+                        </div>
+                    </div>
+                    <div class="fc-menu-footer">
+                        Enterprise multi-source reconciliation engine • Track 04 Buildathon
+                    </div>
+                </div>
+            </div>
+            <a href="#workspace" class="fc-nav-link">Reconciliation</a>
+            <a href="#exceptions" class="fc-nav-link">Exceptions</a>
+            <a href="#analytics" class="fc-nav-link">Analytics</a>
+            <a href="#audit-log" class="fc-nav-link">Audit Trail</a>
+        </div>
+
+        <div class="fc-nav-right">
+            <a href="#workspace" class="fc-btn-primary">Open Controller</a>
+        </div>
+    </div>
+    """))
+
+    # 4. HERO SECTION & 5. HERO VISUAL
+    st.html(textwrap.dedent("""
+    <div class="fc-hero-wrap">
+        <div class="fc-hero">
+            <div>
+                <div class="fc-eyebrow">AI FINANCE CONTROLLER</div>
+                <h1 class="fc-h1">Close your finance ops loop <span class="accent">with AI.</span></h1>
+                <p class="fc-hero-sub">Reconcile financial records across sources, resolve discrepancies safely, and know exactly what still needs human review.</p>
+                <div class="fc-cta-row">
+                    <a href="#workspace" class="fc-cta-p">Open Controller</a>
+                    <a href="#exceptions" class="fc-cta-s">View Exceptions</a>
+                </div>
+                <div class="fc-trust">
+                    <strong>100+ records</strong> &nbsp;•&nbsp; measured accuracy &nbsp;•&nbsp; auditable decisions
+                </div>
+            </div>
+
+            <div class="fc-vis">
+                <div class="fc-vis-grid">
+                    <div class="fc-vis-card">
+                        <div class="fc-vis-src">BANK</div>
+                        <div class="fc-vis-amt">₹4,500.00</div>
+                        <span class="badge badge-ok">✓ Matched</span>
+                    </div>
+                    <div class="fc-vis-card">
+                        <div class="fc-vis-src">LEDGER</div>
+                        <div class="fc-vis-amt">₹4,500.00</div>
+                        <span class="badge badge-ok">✓ Matched</span>
+                    </div>
+                    <div class="fc-vis-card">
+                        <div class="fc-vis-src">INVOICE</div>
+                        <div class="fc-vis-amt">₹4,500.00</div>
+                        <span class="badge badge-ok">✓ Matched</span>
+                    </div>
+                    <div class="fc-vis-card">
+                        <div class="fc-vis-src">SETTLEMENT</div>
+                        <div class="fc-vis-amt">₹4,450.00</div>
+                        <span class="badge badge-err">⚠️ Exception</span>
+                    </div>
+                </div>
+                <div class="fc-vis-footer">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#D97706" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                    <span><strong>₹50.00 variance detected</strong> — Gateway fee deduction flagged for audit review</span>
+                </div>
+            </div>
+        </div>
+    </div>
+    """))
+
+    # 6. DARK FEATURE SECTION BELOW HERO
+    st.html(textwrap.dedent("""
+    <div class="fc-dark">
+        <div class="fc-dark-inner">
+            <h2>Built for finance teams that need answers, not guesswork.</h2>
+            <p class="sub">Automate the repeatable work. Surface the exceptions. Keep every decision traceable.</p>
+
+            <div class="fc-feat-grid">
+                <div class="fc-feat">
+                    <div class="fc-feat-icon">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2F5BFF" stroke-width="2"><polyline points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+                    </div>
+                    <h4>Reconcile faster</h4>
+                    <p>Execute multi-way deterministic matching across bank statements, ledger, invoices, and gateway settlements in seconds.</p>
+                </div>
+
+                <div class="fc-feat">
+                    <div class="fc-feat-icon">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2F5BFF" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                    </div>
+                    <h4>Surface exceptions</h4>
+                    <p>Detect amount mismatches, missing statement feeds, duplicate reference collisions, and timing lags automatically.</p>
+                </div>
+
+                <div class="fc-feat">
+                    <div class="fc-feat-icon">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2F5BFF" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                    </div>
+                    <h4>Stay audit-ready</h4>
+                    <p>Every match and resolution generates a deterministic, plain-English audit log with clear financial reasoning.</p>
+                </div>
+
+                <div class="fc-feat">
+                    <div class="fc-feat-icon">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2F5BFF" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 1 0 7.75"/></svg>
+                    </div>
+                    <h4>Know what needs review</h4>
+                    <p>Zero unverified cash resolutions. High-risk cash discrepancies are strictly escalated to human controllers.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    """))
+
+    # SIDEBAR CONFIGURATION
+    st.sidebar.html(textwrap.dedent("""
+        <div style="display:flex; align-items:center; gap:10px; margin-bottom:16px;">
+            <div style="width:32px; height:32px; background:#2F5BFF; border-radius:8px; display:flex; align-items:center; justify-content:center;">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2.5"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
+            </div>
+            <span style="font-weight:700; color:#0B1B33; font-size:16px;">Agent Controls</span>
+        </div>
+    """))
 
     input_mode = st.sidebar.radio(
         "Choose Data Source:",
@@ -115,7 +318,8 @@ def main():
 
     custom_data = None
     if input_mode == "Upload custom files":
-        st.sidebar.markdown("### Upload Source CSVs")
+        st.sidebar.markdown("---")
+        st.sidebar.html("<span style='font-size:13px; font-weight:700; color:#0B1B33;'>Upload Source CSVs</span>")
         led_file = st.sidebar.file_uploader("Ledger CSV", type=["csv"])
         bank_file = st.sidebar.file_uploader("Bank Statements CSV", type=["csv"])
         inv_file = st.sidebar.file_uploader("Invoices CSV", type=["csv"])
@@ -135,10 +339,20 @@ def main():
     st.sidebar.markdown("---")
     st.sidebar.caption("Track 04: Razorpay AI Buildathon")
 
-    # Big Run Button
-    run_clicked = st.button("🚀 Run AI Reconciliation Agent", type="primary", use_container_width=True)
+    # 7. PRODUCT DASHBOARD SECTION
+    st.html('<div id="workspace" class="fc-dash-wrap">')
 
-    # Initialize or fetch session state results
+    st.html(textwrap.dedent("""
+    <div class="fc-dash-header">
+        <h2>Reconciliation Controller Workspace</h2>
+        <p>Run end-to-end reconciliation across Ledger, Bank, Invoice, and Gateway feeds.</p>
+    </div>
+    """))
+
+    # Big Action Button
+    run_clicked = st.button("⚡ Run AI Reconciliation Agent", type="primary", use_container_width=True)
+
+    # State initialization & Auto-run demo mode
     if "ran" not in st.session_state:
         st.session_state.ran = False
 
@@ -162,9 +376,7 @@ def main():
 
             status.update(label="Reconciliation Complete!", state="complete", expanded=False)
 
-    # If already run or first load in demo mode, show results
     if not st.session_state.ran and input_mode == "Use demo data (recommended for first run)":
-        # Auto-run first view for instant demo experience
         matcher_res, source_records, analyses, eval_res = run_reconciliation(None)
         st.session_state.matcher_res = matcher_res
         st.session_state.source_records = source_records
@@ -184,41 +396,52 @@ def main():
         effective_resolved = det_matched + agent_auto
         auto_pct = (effective_resolved / total * 100) if total > 0 else 0.0
 
-        st.markdown("<br>", unsafe_allow_html=True)
+        # KPI Dashboard Cards
+        st.html(textwrap.dedent(f"""
+        <div id="analytics" class="fc-kpi-grid">
+            <div class="fc-kpi">
+                <div class="fc-kpi-lbl">RECORDS PROCESSED</div>
+                <div class="fc-kpi-val">{total}</div>
+                <div class="fc-kpi-delta delta-neu">100% Data Ingested</div>
+            </div>
+            <div class="fc-kpi">
+                <div class="fc-kpi-lbl">SAFELY RESOLVED</div>
+                <div class="fc-kpi-val">{effective_resolved}</div>
+                <div class="fc-kpi-delta delta-pos">↑ {auto_pct:.1f}% Automated</div>
+            </div>
+            <div class="fc-kpi">
+                <div class="fc-kpi-lbl">NEEDS HUMAN REVIEW</div>
+                <div class="fc-kpi-val">{escalated}</div>
+                <div class="fc-kpi-delta delta-neg">Escalated Exceptions</div>
+            </div>
+            <div class="fc-kpi">
+                <div class="fc-kpi-lbl">MATCHING THROUGHPUT</div>
+                <div class="fc-kpi-val">{matcher_res.throughput_per_second:.0f}</div>
+                <div class="fc-kpi-delta delta-neu">records / second</div>
+            </div>
+        </div>
 
-        # ---------------------------------------------------------------------------
-        # RESULTS SECTION
-        # ---------------------------------------------------------------------------
-        st.markdown("## 📊 Reconciliation Results")
+        <div class="fc-safety-box">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#2F5BFF" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+            <div class="fc-safety-txt">
+                <strong>Financial Control & Cash Safety Guarantee:</strong>
+                The AI Agent automatically resolves low-risk non-cash timing lags (e.g. missing invoice or settlement) ONLY when physical cash movement is 100% verified by the bank statement feed. Missing bank statement feeds and duplicate reference collisions are strictly escalated to human reviewers.
+            </div>
+        </div>
+        """))
 
-        # Top Big Metrics
-        col1, col2, col3, col4 = st.columns(4)
-        col1.metric("Total Records Processed", f"{total}")
-        col2.metric("Successfully Reconciled", f"{effective_resolved}", delta=f"{auto_pct:.1f}% Automated", delta_color="normal")
-        col3.metric("Still Needs Review", f"{escalated}", delta="Finance Ops Escalation", delta_color="inverse")
-        col4.metric("Engine Throughput", f"{matcher_res.throughput_per_second:.0f} rec/sec")
+        st.html('<hr class="fc-divider">')
 
-        # Honesty & Safety Note
-        st.info(
-            "🛡️ **Financial Control & Safety Guarantee:** "
-            "The AI Agent automatically resolves low-risk non-cash timing lags (e.g. missing invoice or settlement) "
-            "ONLY when physical cash movement is 100% verified by the bank statement feed. "
-            "Missing bank statement feeds and duplicate references are strictly escalated to human reviewers to prevent financial misstatement."
-        )
-
-        st.markdown("---")
-
-        # Two Clear Lists: Resolved vs Escalated Exceptions
+        # Tabbed Workspace
         tab_escalated, tab_resolved, tab_agent_log = st.tabs([
             f"⚠️ Exceptions Needing Review ({escalated})",
             f"✅ Safely Resolved Cases ({effective_resolved})",
-            "🧠 Agent Decision Log & Reasoning"
+            "🧠 Agent Decision Policy & Reasoning Log"
         ])
 
-        # ---------------------------------------------------------------------------
-        # TAB 1: EXCEPTIONS NEEDING HUMAN REVIEW
-        # ---------------------------------------------------------------------------
+        # TAB 1: ESCALATED EXCEPTIONS
         with tab_escalated:
+            st.html('<div id="exceptions"></div>')
             st.markdown("### Cases Escalated to Finance Operations")
             st.caption("These entries pose potential cash control risks (such as missing bank statement feeds) and require human verification.")
 
@@ -226,46 +449,48 @@ def main():
 
             for case in escalated_cases:
                 with st.expander(f"🔴 Ledger ID: {case.ledger_id} | Risk: {case.risk_level} | Action: {case.recommended_action}", expanded=True):
-                    c1, c2 = st.columns([2, 1])
+                    # Use 65% / 35% ratio for generous explanation space
+                    c1, c2 = st.columns([65, 35])
                     with c1:
                         st.markdown("**Agent Explanation (Plain English):**")
                         st.write(case.detailed_explanation)
-                        st.markdown("**Recommended Action:**")
+                        st.markdown("<div style='margin-top: 12px;'><strong>Recommended Action:</strong></div>", unsafe_allow_html=True)
                         st.warning(case.recommended_action)
                     with c2:
                         st.markdown("**Key Fields:**")
                         ev = case.evidence_summary["ledger"]
-                        st.markdown(f"""
-                        - **Ledger ID**: `{case.ledger_id}`
-                        - **Amount**: `₹{ev['amount']:,.2f}`
-                        - **Date**: `{ev['date']}`
-                        - **Reference**: `{ev['reference']}`
-                        - **Counterparty**: `{ev['counterparty']}`
-                        - **Missing Feed**: `{', '.join(case.missing_sources)}`
-                        """)
+                        missing_feeds_str = ", ".join(case.missing_sources) if case.missing_sources else "None"
+                        st.html(textwrap.dedent(f"""
+                        <div style="background:#F8FAFC; border:1px solid #E2E8F0; border-radius:8px; padding:12px 14px; font-size:13px; line-height:1.7;">
+                            <div><strong style="color:#0B1B33;">Ledger ID:</strong> <code style="word-break:break-word;">{case.ledger_id}</code></div>
+                            <div><strong style="color:#0B1B33;">Amount:</strong> <code style="word-break:break-word;">₹{ev['amount']:,.2f}</code></div>
+                            <div><strong style="color:#0B1B33;">Date:</strong> <code style="word-break:break-word;">{ev['date']}</code></div>
+                            <div><strong style="color:#0B1B33;">Reference:</strong> <code style="word-break:break-word;">{ev['reference']}</code></div>
+                            <div><strong style="color:#0B1B33;">Counterparty:</strong> <span style="color:#334155; word-break:break-word;">{ev['counterparty']}</span></div>
+                            <div><strong style="color:#0B1B33;">Missing Feed:</strong> <span style="color:#DC2626; font-weight:600; word-break:break-word;">{missing_feeds_str}</span></div>
+                        </div>
+                        """))
 
-        # ---------------------------------------------------------------------------
-        # TAB 2: SAFELY RESOLVED CASES
-        # ---------------------------------------------------------------------------
+        # TAB 2: RESOLVED CASES
         with tab_resolved:
             st.markdown("### Reconciled & Auto-Resolved Transactions")
-            st.caption("Includes 87 deterministic 4-way matches and 9 AI Agent safe auto-resolutions.")
+            st.caption(f"Includes {det_matched} deterministic 4-way matches and {agent_auto} AI Agent safe auto-resolutions.")
 
             filter_type = st.radio(
                 "Filter Resolved Cases:",
-                ["All Resolved", "AI Agent Auto-Resolved (9)", "Deterministic Matched (87)"],
+                ["All Resolved", f"AI Agent Auto-Resolved ({agent_auto})", f"Deterministic Matched ({det_matched})"],
                 horizontal=True
             )
 
             auto_cases = [a for a in analyses if a.safe_auto_resolved]
 
-            if filter_type == "AI Agent Auto-Resolved (9)":
+            if filter_type == f"AI Agent Auto-Resolved ({agent_auto})":
                 for case in auto_cases:
                     with st.expander(f"🟢 Ledger ID: {case.ledger_id} | Auto-Resolved | Action: {case.recommended_action}", expanded=False):
                         st.write(case.detailed_explanation)
                         st.success(case.recommended_action)
-            elif filter_type == "Deterministic Matched (87)":
-                st.success(f"87 records fully matched across all 4 systems (Ledger, Bank, Invoice, Settlement) with 100% confidence.")
+            elif filter_type == f"Deterministic Matched ({det_matched})":
+                st.success(f"{det_matched} records fully matched across all 4 systems (Ledger, Bank, Invoice, Settlement) with 100% confidence.")
             else:
                 st.write(f"Total {effective_resolved} transactions resolved successfully ({det_matched} deterministic + {agent_auto} AI auto-resolved).")
                 st.dataframe(
@@ -281,21 +506,20 @@ def main():
                     use_container_width=True
                 )
 
-        # ---------------------------------------------------------------------------
-        # TAB 3: AGENT DECISION LOG & REASONING
-        # ---------------------------------------------------------------------------
+        # TAB 3: AGENT DECISION LOG
         with tab_agent_log:
+            st.html('<div id="audit-log"></div>')
             st.markdown("### 🧠 AI Agent Decision Policy & Reasoning Log")
             st.markdown("""
             The AI Exception Agent operates under a strict, auditable financial safety framework:
 
             1. **Rule #1: Cash Control Supremacy**:
                - Bank statements represent physical cash flow.
-               - If a Bank Statement record is missing (`LED-0005`, `LED-0026`, `LED-0095`), the Agent **never** auto-resolves, regardless of Invoice or Settlement agreement.
+               - If a Bank Statement record is missing, the Agent **never** auto-resolves, regardless of Invoice or Settlement agreement.
 
             2. **Rule #2: Non-Cash Timing Lag Auto-Resolution**:
-               - If Bank Statement + Settlement match 100% on Tier-1, but the Invoice is absent (`LED-0014`), the Agent safely auto-resolves as an un-invoiced timing lag.
-               - If Bank Statement + Invoice match 100% on Tier-1, but Settlement batch is lagging (`LED-0035`), the Agent safely auto-resolves as a settlement sync delay.
+               - If Bank Statement + Settlement match 100% on Tier-1, but the Invoice is absent, the Agent safely auto-resolves as an un-invoiced timing lag.
+               - If Bank Statement + Invoice match 100% on Tier-1, but Settlement batch is lagging, the Agent safely auto-resolves as a settlement sync delay.
 
             3. **Rule #3: Collision & Variance Escalation**:
                - Any duplicate reference collision or amount mismatch triggers immediate human escalation.
@@ -308,9 +532,14 @@ def main():
                 st.caption(case.detailed_explanation)
                 st.markdown("---")
 
-    # Footer
-    st.markdown("<br><br>", unsafe_allow_html=True)
-    st.caption("AI Finance Controller Agent — Razorpay AI Buildathon Track 04")
+    st.html('</div>')
+
+    # 15. FOOTER
+    st.html(textwrap.dedent("""
+    <div class="fc-footer">
+        Finance Controller Agent &nbsp;•&nbsp; Razorpay AI Buildathon Track 04 &nbsp;•&nbsp; Reconcile records, surface exceptions & close workflows faster.
+    </div>
+    """))
 
 
 if __name__ == "__main__":
