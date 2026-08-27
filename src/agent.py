@@ -43,6 +43,7 @@ import os
 import json
 import time
 import uuid
+from decimal import Decimal, InvalidOperation
 from datetime import datetime, timezone
 from dataclasses import dataclass, asdict, field
 from pathlib import Path
@@ -72,6 +73,7 @@ from src.ml_matcher import (
     MLReconciliationMatcher,
     extract_pair_features,
     FEATURE_NAMES,
+    ModelArtifactError,
 )
 
 
@@ -86,7 +88,7 @@ from src.llm_reviewer import (
 # Data Classes
 # ---------------------------------------------------------------------------
 
-@dataclass
+@dataclass(frozen=True)
 class AuditEvent:
     event_id: str
     timestamp: str
@@ -114,6 +116,7 @@ class AuditEvent:
     llm_recommended_action: Optional[str] = None
     llm_human_review_required: Optional[bool] = None
     llm_model_name: Optional[str] = None
+    run_id: Optional[str] = None
 
     def to_dict(self) -> Dict[str, Any]:
         return asdict(self)
@@ -164,9 +167,36 @@ class BatchSummary:
     gemini_total_latency_seconds: float = 0.0
     gemini_avg_successful_latency_sec: float = 0.0
     gemini_avg_attempts_per_case: float = 0.0
+    tax_checks: int = 0
+    tax_matches: int = 0
+    tax_mismatches: int = 0
+    tax_missing: int = 0
 
     def to_dict(self) -> Dict[str, Any]:
         return asdict(self)
+
+
+@dataclass
+class BatchResult:
+    """Single authoritative runtime result shared by all consumers."""
+    run_id: str
+    started_at: str
+    completed_at: str
+    summary: BatchSummary
+    ml: Dict[str, Any]
+    gemini: Dict[str, Any]
+    performance: Dict[str, Any]
+    decisions: List[AgentDecision]
+    audit_events: List[AuditEvent]
+
+    def to_dict(self) -> Dict[str, Any]:
+        return asdict(self)
+
+    def __iter__(self):
+        """Compatibility for older callers while they migrate to BatchResult."""
+        yield self.decisions
+        yield self.audit_events
+        yield self.summary
 
 
 @dataclass
@@ -454,28 +484,59 @@ def tool_verify_reference(
 
 
 def tool_verify_tax_line(
-    anchor_tax: str,
-    target_tax: str,
+    invoice_tax: Any,
+    ledger_tax: Any,
+    ledger_id: Optional[str] = None,
+    invoice_id: Optional[str] = None,
+    reference: Optional[str] = None,
+    date: Optional[str] = None,
+    counterparty: Optional[str] = None,
 ) -> Dict[str, Any]:
-    """
-    Tool 9: Verify tax line consistency across records.
-    """
-    a_norm = str(anchor_tax).strip().upper()
-    t_norm = str(target_tax).strip().upper()
+    """Tool 9: Compare explicit invoice and ledger tax amounts deterministically."""
+    def parse_tax(value: Any) -> Optional[Decimal]:
+        text = str(value or "").strip().upper().replace("₹", "")
+        if not text or text in {"NA", "N/A", "NONE", "NOT_APPLICABLE"}:
+            return None
+        if "=" in text:
+            text = text.rsplit("=", 1)[1].strip()
+        try:
+            return Decimal(text)
+        except (InvalidOperation, ValueError):
+            return None
 
-    if not a_norm and not t_norm:
-        status = "BOTH_EMPTY"
-    elif a_norm == t_norm:
-        status = "MATCH"
-    elif not a_norm or not t_norm:
-        status = "MISSING_ONE"
+    invoice_text = str(invoice_tax or "").strip()
+    ledger_text = str(ledger_tax or "").strip()
+    non_applicable = {"NA", "N/A", "NONE", "NOT_APPLICABLE"}
+    invoice_value = parse_tax(invoice_text)
+    ledger_value = parse_tax(ledger_text)
+    invoice_missing = not invoice_text or invoice_text.upper() in non_applicable
+    ledger_missing = not ledger_text or ledger_text.upper() in non_applicable
+
+    if invoice_missing and ledger_missing:
+        status = "TAX_NOT_APPLICABLE" if invoice_text or ledger_text else "TAX_MISSING"
+        difference = None
+    elif invoice_value is None or ledger_value is None:
+        status = "TAX_MISSING"
+        difference = None
     else:
-        status = "MISMATCH"
+        difference = abs(invoice_value - ledger_value)
+        status = "TAX_MATCH" if difference == Decimal("0") else "TAX_MISMATCH"
 
     return {
         "status": status,
-        "anchor_tax": a_norm,
-        "target_tax": t_norm,
+        "invoice_tax": float(invoice_value) if invoice_value is not None else None,
+        "ledger_tax": float(ledger_value) if ledger_value is not None else None,
+        "tax_difference": float(difference) if difference is not None else None,
+        "evidence": {
+            "ledger_id": ledger_id,
+            "invoice_id": invoice_id,
+            "reference": reference,
+            "date": date,
+            "counterparty": counterparty,
+            "invoice_tax_raw": invoice_text,
+            "ledger_tax_raw": ledger_text,
+        },
+        "exception_type": "tax_mismatch" if status == "TAX_MISMATCH" else ("tax_missing" if status == "TAX_MISSING" else "none"),
     }
 
 
@@ -541,12 +602,20 @@ def tool_classify_reconciliation_case(
     """
     matches = [bank_m, inv_m, stl_m]
 
-    # Explicit ambiguity check
+    tax_status = verifications.get("tax_check", {}).get("status", "TAX_NOT_APPLICABLE")
+
+    # Explicit ambiguity and tax-control checks
     if any(m.is_ambiguous for m in matches) or verifications.get("dup_check", {}).get("has_collision"):
         return (
             "EXCEPTION", 0.0, 3,
             "duplicate_reference",
             "Escalate: Duplicate reference collision / ambiguous candidates",
+        )
+    if tax_status in {"TAX_MISMATCH", "TAX_MISSING"}:
+        return (
+            "EXCEPTION", 0.0, 3,
+            verifications["tax_check"]["exception_type"],
+            "Escalate: Review tax posting",
         )
 
     matched_recs = [m for m in matches if m.record_id is not None]
@@ -574,12 +643,8 @@ def tool_classify_reconciliation_case(
     if n_matched == 3:
         # Check for subtle verifications (date drift, tax mismatch)
         d_drift = verifications.get("date_drift_max", 0.0)
-        tax_stat = verifications.get("tax_status", "MATCH")
-
         if d_drift > 0.0:
             exception_type = "date_drift"
-        elif tax_stat == "MISMATCH":
-            exception_type = "missing_tax_line"
 
         return (
             "MATCHED", avg_conf, min_tier,
@@ -623,6 +688,8 @@ def tool_recommend_action(
             return "Escalate: Duplicate reference collision", "HIGH", False
         if amt_disc:
             return "Escalate: Material amount discrepancy", "HIGH", False
+        if verifications.get("tax_check", {}).get("status") in {"TAX_MISMATCH", "TAX_MISSING"}:
+            return "Escalate: Review tax posting", "HIGH", False
         return "Manual review: Conflicting counterparty/date evidence", "HIGH", False
 
     if status == "PARTIAL":
@@ -670,9 +737,10 @@ def tool_write_audit_event(
     recommended_action: str,
     requires_human_review: bool,
     llm_review: Optional[ExceptionReview] = None,
+    run_id: Optional[str] = None,
 ) -> AuditEvent:
     """
-    Tool 15: Create an immutable, machine-readable audit event with full LLM trace data.
+    Tool 15: Create a top-level immutable, machine-readable audit event with full LLM trace data.
     """
     event_id = f"AUD-{uuid.uuid4().hex[:12].upper()}"
     timestamp = datetime.now(timezone.utc).isoformat()
@@ -704,6 +772,7 @@ def tool_write_audit_event(
         llm_recommended_action=llm_review.recommended_action if llm_review else None,
         llm_human_review_required=llm_review.requires_human_review if llm_review else None,
         llm_model_name=llm_review.model_name if llm_review else None,
+        run_id=run_id,
     )
 
 
@@ -741,6 +810,10 @@ def tool_summarize_batch(
     fallback = stats.get("fallback", 0)
     succ_latency = stats.get("succ_latency", 0.0)
     total_latency = stats.get("latency", 0.0)
+    tax_checks = stats.get("tax_checks", 0)
+    tax_matches = stats.get("tax_matches", 0)
+    tax_mismatches = stats.get("tax_mismatches", 0)
+    tax_missing = stats.get("tax_missing", 0)
 
     avg_succ_lat = succ_latency / successful if successful > 0 else 0.0
     total_att = initial_attempts + retries
@@ -769,6 +842,10 @@ def tool_summarize_batch(
         gemini_total_latency_seconds=total_latency,
         gemini_avg_successful_latency_sec=avg_succ_lat,
         gemini_avg_attempts_per_case=avg_attempts,
+        tax_checks=tax_checks,
+        tax_matches=tax_matches,
+        tax_mismatches=tax_mismatches,
+        tax_missing=tax_missing,
     )
 
 
@@ -804,17 +881,26 @@ class FinanceControllerAgent:
         self.data_dir = data_dir or DATA_DIR
         self.ml_threshold = ml_threshold
         self.ml_matcher = MLReconciliationMatcher(data_dir=self.data_dir, ml_threshold=self.ml_threshold)
+        self.ml_model_error: Optional[str] = None
+        try:
+            self.ml_matcher.load_model_artifact()
+        except ModelArtifactError as error:
+            self.ml_model_error = str(error)
         self.llm_reviewer = GeminiExceptionReviewer(api_key=api_key, model_name=model_name)
         self.tool_call_count = 0
+        self.current_run_id: Optional[str] = None
 
     def run_reconciliation_batch(
         self,
         df_dict: Optional[Dict[str, pd.DataFrame]] = None,
-    ) -> Tuple[List[AgentDecision], List[AuditEvent], BatchSummary]:
+    ) -> BatchResult:
         """
         Execute full batch reconciliation workflow via explicit tool calls.
         """
         t0 = time.perf_counter()
+        run_id = f"RUN-{uuid.uuid4().hex[:12].upper()}"
+        self.current_run_id = run_id
+        started_at = datetime.now(timezone.utc).isoformat()
         self.tool_call_count = 0
         self.llm_reviewer.begin_batch()
 
@@ -831,14 +917,8 @@ class FinanceControllerAgent:
         invoice_records = norm_sources.get("invoice", [])
         settlement_records = norm_sources.get("settlement", [])
 
-        # Train ML matcher model (offline candidate feature pipeline)
-        if self.ml_matcher is not None:
-            try:
-                self.ml_matcher.load_sources()
-                self.ml_matcher.train_model()
-            except Exception as e:
-                # Failure handling: ML model unavailable
-                print(f"[WARN] FinanceControllerAgent: ML Scorer training failed ({e}). Operating in deterministic mode.")
+        # Runtime orchestration never trains from ground truth. A pre-fitted offline
+        # model may be injected; otherwise residual ML matching fails safely.
 
         # Build poisoned reference sets
         poisoned_bank = _build_poisoned_refs(bank_records)
@@ -860,6 +940,10 @@ class FinanceControllerAgent:
         gemini_fallback = 0
         gemini_total_latency = 0.0
         gemini_succ_latency = 0.0
+        tax_checks = 0
+        tax_matches = 0
+        tax_mismatches = 0
+        tax_missing = 0
 
         # Step 3: Record-by-Record Bounded Orchestration Loop
         for ledger_rec in ledger_records:
@@ -899,6 +983,16 @@ class FinanceControllerAgent:
                 if dec.llm_review.get("fallback_used", False):
                     gemini_fallback += 1
 
+            tax_check = dec.evidence.get("verifications", {}).get("tax_check")
+            if tax_check:
+                tax_checks += 1
+                if tax_check.get("status") == "TAX_MATCH":
+                    tax_matches += 1
+                elif tax_check.get("status") == "TAX_MISMATCH":
+                    tax_mismatches += 1
+                elif tax_check.get("status") == "TAX_MISSING":
+                    tax_missing += 1
+
         elapsed = time.perf_counter() - t0
 
         gemini_stats = {
@@ -910,6 +1004,10 @@ class FinanceControllerAgent:
             "fallback": gemini_fallback,
             "latency": gemini_total_latency,
             "succ_latency": gemini_succ_latency,
+            "tax_checks": tax_checks,
+            "tax_matches": tax_matches,
+            "tax_mismatches": tax_mismatches,
+            "tax_missing": tax_missing,
         }
 
         # Step 4: Summarize batch (Tool 16)
@@ -922,7 +1020,39 @@ class FinanceControllerAgent:
             gemini_stats=gemini_stats,
         )
 
-        return decisions, audit_events, summary
+        completed_at = datetime.now(timezone.utc).isoformat()
+        ml_available = self.ml_matcher is not None and self.ml_matcher.is_fitted and self.ml_model_error is None
+        core_runtime = max(0.0, elapsed - gemini_total_latency)
+        return BatchResult(
+            run_id=run_id,
+            started_at=started_at,
+            completed_at=completed_at,
+            summary=summary,
+            ml={
+                "model_version": "match-model-v1" if ml_available else None,
+                "ml_scored_candidates": self.ml_matcher.ml_stats.get("scored_pairs", 0) if self.ml_matcher else 0,
+                "ml_threshold": self.ml_threshold,
+                "ml_available": ml_available,
+                "error": self.ml_model_error,
+            },
+            gemini={
+                "configured": self.llm_reviewer.is_configured,
+                "eligible_cases": summary.gemini_eligible_cases,
+                "initial_attempts": summary.gemini_initial_attempts,
+                "retries": summary.gemini_retries,
+                "successful_reviews": summary.gemini_successful_reviews,
+                "failed_reviews": summary.gemini_final_failures,
+                "fallback_cases": summary.gemini_fallback_cases,
+                "average_latency": summary.gemini_avg_successful_latency_sec,
+            },
+            performance={
+                "reconciliation_engine_throughput": len(decisions) / core_runtime if core_runtime > 0 else 0.0,
+                "agent_throughput": summary.throughput_records_per_sec,
+                "total_runtime": summary.processing_time_seconds,
+            },
+            decisions=decisions,
+            audit_events=audit_events,
+        )
 
     def _process_single_ledger_record(
         self,
@@ -1033,7 +1163,7 @@ class FinanceControllerAgent:
             "missing_check": missing_check,
             "has_amount_discrepancy": False,
             "date_drift_max": 0.0,
-            "tax_status": "MATCH",
+            "tax_status": "TAX_NOT_APPLICABLE",
         }
 
         # Check amount and date verifications for matched records
@@ -1043,14 +1173,22 @@ class FinanceControllerAgent:
                 if t_row:
                     amt_res = tool_verify_amount(ledger_rec["amount"], t_row["amount"])
                     date_res = tool_verify_date(ledger_rec["date"], t_row["date"])
-                    tax_res = tool_verify_tax_line(ledger_rec.get("tax_line", ""), t_row.get("tax_line", ""))
-
                     if amt_res["status"] == "DISCREPANCY":
                         verifications["has_amount_discrepancy"] = True
                     if date_res["drift_days"] is not None:
                         verifications["date_drift_max"] = max(verifications["date_drift_max"], date_res["drift_days"])
-                    if tax_res["status"] == "MISMATCH":
-                        verifications["tax_status"] = "MISMATCH"
+
+        invoice_row = target_lookup["invoice"].get(inv_m.record_id) if inv_m.record_id else None
+        if invoice_row is not None:
+            verifications["tax_check"] = tool_verify_tax_line(
+                invoice_tax=invoice_row.get("tax_line", ""),
+                ledger_tax=ledger_rec.get("tax_line", ""),
+                ledger_id=lid,
+                invoice_id=inv_m.record_id,
+                reference=ledger_rec.get("_ref_norm", ""),
+                date=str(ledger_rec.get("date", "")),
+                counterparty=str(ledger_rec.get("_cp_norm", "")),
+            )
 
         # Tool 12: Classify reconciliation case
         self.tool_call_count += 1
@@ -1164,6 +1302,7 @@ class FinanceControllerAgent:
             recommended_action=action,
             requires_human_review=requires_human_review,
             llm_review=llm_review_res,
+            run_id=self.current_run_id,
         )
 
         trace.append(f"8. Audit event written: {audit_event.event_id}")

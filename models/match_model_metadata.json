@@ -1,0 +1,31 @@
+{
+  "model_type": "sklearn.pipeline.Pipeline(LogisticRegression)",
+  "feature_names": [
+    "amt_diff_abs",
+    "amt_diff_rel",
+    "date_diff_days",
+    "cp_sim",
+    "ref_sim",
+    "desc_sim",
+    "tax_line_match",
+    "ref_present",
+    "exact_ref_agree",
+    "amt_in_tol_t1",
+    "amt_in_tol_t2",
+    "date_in_tol_t1",
+    "date_in_tol_t2",
+    "candidate_count"
+  ],
+  "random_seed": 42,
+  "threshold": 0.9,
+  "validation_metrics": {
+    "accuracy": 1.0,
+    "precision": 1.0,
+    "recall": 1.0
+  },
+  "training_accuracy": 1.0,
+  "training_rows": 6701,
+  "validation_rows": 2787,
+  "training_timestamp": "2026-08-27T15:48:44.427149+00:00",
+  "model_version": "match-model-v1"
+}

@@ -281,7 +281,7 @@ class TestGeminiLLMReviewer(unittest.TestCase):
     # 11. Gemini attempted only for eligible cases
     def test_11_gemini_attempted_only_for_eligible_cases(self):
         """Test that Gemini is invoked only for exception cases, not clean 4-way matches."""
-        agent = FinanceControllerAgent()
+        agent = FinanceControllerAgent(api_key="")
         decisions, _, summary = agent.run_reconciliation_batch()
 
         # Clean matches (MATCHED) should NOT have llm_review

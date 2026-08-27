@@ -76,9 +76,12 @@ class TestFinanceControllerAgent(unittest.TestCase):
         self.assertTrue(audit.event_id.startswith("AUD-"))
         self.assertFalse(audit.requires_human_review)
 
+        with self.assertRaises((AttributeError, TypeError)):
+            audit.decision = "EXCEPTION"
+
     def test_full_agent_batch_execution(self):
         """Test full batch reconciliation execution through FinanceControllerAgent."""
-        agent = FinanceControllerAgent(data_dir=self.data_dir)
+        agent = FinanceControllerAgent(data_dir=self.data_dir, api_key="")
         decisions, audits, summary = agent.run_reconciliation_batch()
 
         self.assertEqual(len(decisions), 99)
@@ -95,7 +98,7 @@ class TestFinanceControllerAgent(unittest.TestCase):
 
     def test_safe_auto_resolution_policy(self):
         """Verify that single non-cash timing lag is safely auto-resolved, but missing bank is escalated."""
-        agent = FinanceControllerAgent(data_dir=self.data_dir)
+        agent = FinanceControllerAgent(data_dir=self.data_dir, api_key="")
         decisions, _, _ = agent.run_reconciliation_batch()
         dec_dict = {d.ledger_id: d for d in decisions}
 
@@ -120,7 +123,7 @@ class TestFinanceControllerAgent(unittest.TestCase):
 
     def test_ambiguity_and_duplicate_escalation(self):
         """Verify that duplicate reference collision or ambiguous candidates require human review."""
-        agent = FinanceControllerAgent(data_dir=self.data_dir)
+        agent = FinanceControllerAgent(data_dir=self.data_dir, api_key="")
         decisions, _, _ = agent.run_reconciliation_batch()
         dec_dict = {d.ledger_id: d for d in decisions}
 
@@ -133,7 +136,7 @@ class TestFinanceControllerAgent(unittest.TestCase):
 
     def test_failure_handling_ml_unavailable(self):
         """Test agent resilience when ML scorer is set to None/unavailable."""
-        agent = FinanceControllerAgent(data_dir=self.data_dir)
+        agent = FinanceControllerAgent(data_dir=self.data_dir, api_key="")
         agent.ml_matcher = None  # Simulate ML scorer failure
 
         decisions, audits, summary = agent.run_reconciliation_batch()

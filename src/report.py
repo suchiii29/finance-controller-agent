@@ -1,131 +1,113 @@
-"""
-report.py
-=========
-Report generator for the AI Finance Controller project.
-
-Produces:
-1. Console summary output
-2. data/exceptions.json (machine-readable structured exception export)
-3. report.md (human-readable executive summary & detailed report)
-"""
+"""Render runtime reports from the authoritative BatchResult."""
 
 from __future__ import annotations
 
 import json
 from pathlib import Path
-from typing import List, Dict, Any, Tuple
+from typing import Optional, Tuple
 
-from src.matcher import ReconciliationResult
-from src.evaluate import EvaluationResult
-from src.agent import ExceptionAnalysis
+from src.agent import BatchResult
 
 REPORT_DIR = Path(__file__).parent.parent / "reports"
 DATA_DIR = Path(__file__).parent.parent / "data"
 
 
-def generate_final_report(
-    matcher_result: ReconciliationResult,
-    evaluation_result: EvaluationResult,
-    analyses: List[ExceptionAnalysis],
-) -> Tuple[Path, Path]:
-    """
-    Generate final exports: exceptions.json and report.md.
-    Returns paths to (exceptions_json_path, report_md_path).
-    """
+def generate_final_report(batch_result: BatchResult, evaluation_result: Optional[object] = None) -> Tuple[Path, Path]:
+    """Generate report and exception export without rerunning reconciliation."""
     REPORT_DIR.mkdir(parents=True, exist_ok=True)
     DATA_DIR.mkdir(parents=True, exist_ok=True)
-
     json_path = DATA_DIR / "exceptions.json"
     md_path = Path(__file__).parent.parent / "report.md"
+    summary = batch_result.summary
 
-    # 1. Export exceptions.json
-    export_data = [a.to_dict() for a in analyses]
-    with open(json_path, "w", encoding="utf-8") as f:
-        json.dump(export_data, f, indent=2)
+    records = []
+    for decision in batch_result.decisions:
+        if not decision.requires_human_review and decision.status not in {"EXCEPTION", "UNRESOLVED"}:
+            continue
+        tax = decision.evidence.get("verifications", {}).get("tax_check", {})
+        llm = decision.llm_review or {}
+        records.append({
+            "run_id": batch_result.run_id,
+            "ledger_id": decision.ledger_id,
+            "reconciliation_status": decision.status,
+            "controller_decision": decision.status,
+            "exception_type": decision.exception_type,
+            "source_ids": {"bank": decision.bank_id, "invoice": decision.invoice_id, "settlement": decision.settlement_id},
+            "confidence": decision.confidence,
+            "recommendation": decision.recommended_action,
+            "requires_human_review": decision.requires_human_review,
+            "tax_status": tax.get("status", "NOT_CHECKED"),
+            "gemini_status": llm.get("status_code", "NOT_ATTEMPTED"),
+            "audit_event_id": decision.audit_event_id,
+        })
+    json_path.write_text(json.dumps(records, indent=2), encoding="utf-8")
 
-    # 2. Compute Category Breakdown
-    total = matcher_result.total_processed
-    deterministic_matched = matcher_result.status_counts.get("MATCHED", 0)
-    agent_auto_resolved = sum(1 for a in analyses if a.safe_auto_resolved)
-    escalated_exceptions = len(analyses) - agent_auto_resolved
+    evaluation_section = ""
+    if evaluation_result is not None:
+        evaluation_section = f"""
+## Offline Evaluation
 
-    effective_resolved = deterministic_matched + agent_auto_resolved
-    effective_match_rate = (effective_resolved / total * 100) if total > 0 else 0.0
-
-    risk_counts = {"LOW": 0, "MEDIUM": 0, "HIGH": 0}
-    for a in analyses:
-        risk_counts[a.risk_level] = risk_counts.get(a.risk_level, 0) + 1
-
-    md_content = f"""# Executive Reconciliation & Exception Report
-**Razorpay AI Buildathon Track 04 — AI Finance Controller System**
-
----
-
-## 1. Executive Summary
-
-| Category / Metric | Count / Value | Percentage |
-| :--- | :--- | :--- |
-| **Total Anchor Records Processed** | {total} | 100.0% |
-| **Fully Matched (Deterministic Rules)** | {deterministic_matched} | {deterministic_matched/total*100:.1f}% |
-| **Safely Auto-Resolved (AI Agent)** | {agent_auto_resolved} | {agent_auto_resolved/total*100:.1f}% |
-| **Still Escalated Exceptions (Finance Ops)** | {escalated_exceptions} | {escalated_exceptions/total*100:.1f}% |
-| **Total Effective Automation Rate** | **{effective_resolved} / {total}** | **{effective_match_rate:.1f}%** |
-| **Processing Throughput** | **{matcher_result.throughput_per_second:.0f} rec/sec** | — |
-
-> **Financial Safety Statement:**
-> The system operates under strict financial control policies. Only single non-cash timing lags with 100% Tier-1 corroboration and zero collision risk are safely auto-resolved ({agent_auto_resolved} cases). All {escalated_exceptions} remaining risk cases (such as missing bank statement feeds) are safely escalated to Finance Ops with detailed root-cause explanations.
-
----
-
-## 2. Exception Risk Breakdown
-
-- **HIGH Risk Cases**: {risk_counts['HIGH']} (Requires immediate manual audit / ops action)
-- **MEDIUM Risk Cases**: {risk_counts['MEDIUM']} (Missing primary cash feeds - Bank statement gap)
-- **LOW Risk Cases**: {risk_counts['LOW']} (Safely auto-resolved non-cash timing lags)
-
----
-
-## 3. Exception & Resolution Register
-
-| Ledger ID | Original Status | Agent Final Status | Risk Level | Actionable Recommendation | Explanation |
-| :--- | :--- | :--- | :--- | :--- | :--- |
-"""
-    for a in analyses:
-        md_content += f"| `{a.ledger_id}` | {a.original_status} | **{a.final_status}** | **{a.risk_level}** | {a.recommended_action} | {a.explanation} |\n"
-
-    md_content += f"""
----
-
-## 4. Evaluation Against Ground Truth
+Evaluation against ground truth is separate from the runtime controller result.
 
 | Metric | Value |
-| :--- | :--- |
-| **Correct full matches** | {evaluation_result.correct_full_matches} |
-| **Correct partial detections** | {evaluation_result.correct_partial_detections} |
-| **Correctly escalated (unresolved)** | {evaluation_result.correctly_escalated} |
-| **Incorrect automatic matches** | {evaluation_result.incorrect_full_matches} |
-| **Missed resolvable transactions** | {evaluation_result.missed_resolvable} |
-| **Incorrectly auto-resolved** | {evaluation_result.incorrectly_auto_resolved} |
-| **Match precision** | {evaluation_result.match_precision * 100:.1f}% |
-| **Match recall** | {evaluation_result.match_recall * 100:.1f}% |
-| **Match F1** | {evaluation_result.match_f1 * 100:.1f}% |
-| **Exception detection rate** | {evaluation_result.exception_detection_rate * 100:.1f}% |
-| **Canonical transactions (total)** | {evaluation_result.total_canonical} |
-| **No-ledger-anchor (excluded)** | {evaluation_result.ledger_missing_in_gt} (CAN-0090) |
-
----
-
-## 5. System Architecture & Safety Controls
-
-1. **Deterministic Layer**: Performs high-confidence multi-tier matching against observable source feeds.
-2. **AI Exception Agent Layer**: Evaluates residual cases with strict guardrails:
-   - *Never auto-resolves missing bank statement feeds.*
-   - *Never auto-resolves when duplicate reference collisions exist.*
-   - *Proposes safe auto-resolution only when 2 available feeds agree 100% on Tier-1 exact matching.*
-3. **Audit Trail & Traceability**: Every decision is fully logged in `data/exceptions.json`.
+| :--- | ---: |
+| Correct full matches | {evaluation_result.correct_full_matches} |
+| Correct partial detections | {evaluation_result.correct_partial_detections} |
+| Correctly escalated | {evaluation_result.correctly_escalated} |
+| Match precision | {evaluation_result.match_precision * 100:.1f}% |
+| Match recall | {evaluation_result.match_recall * 100:.1f}% |
 """
 
-    with open(md_path, "w", encoding="utf-8") as f:
-        f.write(md_content)
+    md_path.write_text(f"""# Finance Controller Runtime Report
 
+**Run ID:** `{batch_result.run_id}`
+**Started:** {batch_result.started_at}
+**Completed:** {batch_result.completed_at}
+
+## Controller Summary
+
+| Metric | Value |
+| :--- | ---: |
+| Records processed | {summary.records_processed} |
+| Matched | {summary.matched} |
+| Partial | {summary.partial} |
+| Exceptions | {summary.exceptions} |
+| Unresolved | {summary.unresolved} |
+| Safe auto-resolved | {summary.safely_resolved - summary.matched} |
+| Human review | {summary.escalated} |
+
+## Tax Verification
+
+| Metric | Value |
+| :--- | ---: |
+| Tax checks | {summary.tax_checks} |
+| Tax matches | {summary.tax_matches} |
+| Tax mismatches | {summary.tax_mismatches} |
+| Tax missing | {summary.tax_missing} |
+
+## Gemini
+
+| Metric | Value |
+| :--- | ---: |
+| Configured | {batch_result.gemini['configured']} |
+| Eligible cases | {batch_result.gemini['eligible_cases']} |
+| Initial attempts | {batch_result.gemini['initial_attempts']} |
+| Retries | {batch_result.gemini['retries']} |
+| Successful reviews | {batch_result.gemini['successful_reviews']} |
+| Failed reviews | {batch_result.gemini['failed_reviews']} |
+| Fallback cases | {batch_result.gemini['fallback_cases']} |
+
+## Performance
+
+| Metric | Value |
+| :--- | ---: |
+| Agent throughput | {batch_result.performance['agent_throughput']:.2f} records/sec |
+| Total runtime | {batch_result.performance['total_runtime']:.3f} sec |
+
+## Audit
+
+- Audit events: {len(batch_result.audit_events)}
+- Exception export records: {len(records)}
+- Every audit event carries run ID `{batch_result.run_id}`.
+{evaluation_section}""".rstrip() + "\n", encoding="utf-8")
     return json_path, md_path

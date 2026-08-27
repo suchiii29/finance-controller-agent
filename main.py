@@ -14,9 +14,11 @@ import time
 from pathlib import Path
 
 from src.matcher import ReconciliationMatcher
-from src.ml_matcher import MLReconciliationMatcher, evaluate_thresholds
+from src.ml_matcher import MLReconciliationMatcher, ModelArtifactError
 from src.evaluate import evaluate
 from src.agent import FinanceControllerAgent, ExceptionAgent
+from src.qa import FinanceControllerQA
+from src.controller_agent import BoundedGeminiControllerAgent
 from src.report import generate_final_report
 
 LINE = "=" * 70
@@ -38,10 +40,20 @@ def main() -> None:
     print("\n[1/5] Executing Bounded Finance Controller Agent Batch Workflow...")
     agent = FinanceControllerAgent(ml_threshold=0.90)
     
-    mode_str = "GEMINI LIVE MODE" if agent.llm_reviewer.is_configured else "GEMINI FALLBACK MODE"
+    mode_str = "GEMINI CONFIGURED (PER-CASE STATUS BELOW)" if agent.llm_reviewer.is_configured else "GEMINI UNCONFIGURED FALLBACK"
     print(f"  [STATUS] Operating in: {mode_str} (Model: {agent.llm_reviewer.model_name})")
 
-    agent_decisions, audit_events, batch_summary = agent.run_reconciliation_batch()
+    batch_result = agent.run_reconciliation_batch()
+    agent_decisions = batch_result.decisions
+    audit_events = batch_result.audit_events
+    batch_summary = batch_result.summary
+    gemini_batch_status = (
+        "GEMINI REVIEWS SUCCEEDED"
+        if batch_summary.gemini_successful_reviews == batch_summary.gemini_eligible_cases
+        else "GEMINI PARTIAL/FALLBACK"
+        if batch_summary.gemini_successful_reviews > 0
+        else "GEMINI FALLBACK FOR ALL ELIGIBLE CASES"
+    )
 
     # ── 2. Run Deterministic Baseline & ML Evaluation ─────────────────────────
     print("\n[2/5] Running Deterministic Baseline & Evaluation Benchmarks...")
@@ -52,7 +64,10 @@ def main() -> None:
 
     ml_matcher = MLReconciliationMatcher(ml_threshold=0.90)
     ml_matcher.load_sources()
-    ml_matcher.train_model()
+    try:
+        ml_matcher.load_model_artifact()
+    except ModelArtifactError as error:
+        print(f"  [WARN] Offline ML artifact unavailable: {error}. Continuing with deterministic matching.")
     ml_result = ml_matcher.reconcile()
     ml_ev = evaluate(ml_result)
 
@@ -63,14 +78,9 @@ def main() -> None:
         "settlement": {r["record_id"]: r for r in base_matcher._settlement_records},
     }
 
-    # ── 3. Exception Agent Analysis (for legacy reporting) ────────────────────
-    print("\n[3/5] Generating Exception Register & Audit Analysis...")
-    legacy_agent = ExceptionAgent()
-    analyses = legacy_agent.analyze_residuals(ml_result.decisions, source_records)
-
     # ── 4. Generate Reports ───────────────────────────────────────────────────
-    print("\n[4/5] Exporting exceptions.json and generating report.md...")
-    json_path, md_path = generate_final_report(ml_result, ml_ev, analyses)
+    print("\n[3/4] Exporting exceptions.json and generating report.md...")
+    json_path, md_path = generate_final_report(batch_result, ml_ev)
 
     # ══════════════════════════════════════════════════════════════════════
     # SECTION 1 — AGENT BATCH SUMMARY & RELIABILITY METRICS
@@ -98,6 +108,10 @@ def main() -> None:
     print(f"  {'Gemini Total Latency':<42} | {batch_summary.gemini_total_latency_seconds:.3f} sec")
     print(f"  {'Reconciliation Engine Throughput':<42} | {ml_result.throughput_per_second:.0f} rec/sec")
     print(f"  {'Agent Orchestration Throughput':<42} | {batch_summary.throughput_records_per_sec:.0f} rec/sec")
+    print(f"  {'Tax Checks':<42} | {batch_summary.tax_checks:<30}")
+    print(f"  {'Tax Matches':<42} | {batch_summary.tax_matches:<30}")
+    print(f"  {'Tax Mismatches':<42} | {batch_summary.tax_mismatches:<30}")
+    print(f"  {'Tax Missing':<42} | {batch_summary.tax_missing:<30}")
 
     # ══════════════════════════════════════════════════════════════════════
     # SECTION 2 — REPRESENTATIVE AGENT EXECUTION TRACES (5 CASES)
@@ -128,9 +142,9 @@ def main() -> None:
     _section("3. GEMINI LLM EXCEPTION REASONING & DISCREPANCY ANALYSIS")
 
     if agent.llm_reviewer.is_configured:
-        print("  *** GEMINI LIVE MODE ACTIVE ***")
+        print(f"  *** {gemini_batch_status} ***")
         print(f"  API Key configured. Model: {agent.llm_reviewer.model_name}")
-        print("  Executing targeted live reasoning test on selected difficult exception cases:\n")
+        print("  Gemini is configured; per-case API status below is authoritative.\n")
     else:
         print("  *** GEMINI FALLBACK MODE ACTIVE ***")
         print("  GEMINI_API_KEY is not configured in environment.")
@@ -163,8 +177,41 @@ def main() -> None:
         print(f"  │  Explanation          : {llm.get('explanation', 'N/A')}")
         print(f"  └─────────────────────────────────────────────────────────────\n")
 
+    _section("4. BOUNDED GEMINI TOOL INVESTIGATION — LED-0034")
+    investigator = BoundedGeminiControllerAgent(agent_decisions, audit_events, agent.llm_reviewer)
+    investigation = investigator.investigate("LED-0034", "Investigate LED-0034 and explain whether it requires human review.")
+    print(f"  Status                 : {investigation.status}")
+    print(f"  Interaction ID        : {investigation.interaction_id or 'N/A'}")
+    print(f"  Final Controller      : {investigation.final_decision}")
+    print(f"  Tools Called          : {', '.join(investigation.tools_called) or 'none'}")
+    print(f"  Tool Steps            : {len(investigation.steps)} / {investigator.max_steps}")
+    print(f"  Loop Detected         : {investigation.loop_detected}")
+    print(f"  Step Limit Reached    : {investigation.step_limit_reached}")
+    print(f"  Failure Category      : {investigation.failure_category or 'none'}")
+    for step in investigation.steps:
+        print(f"    - {step.tool_name}({step.arguments}) -> {step.result_status}")
+    print(f"  Explanation           : {investigation.explanation}\n")
+    print(f"  Agent Runs            : {investigator.metrics.agent_runs}")
+    print(f"  Successful Runs       : {investigator.metrics.successful_runs}")
+    print(f"  Failed Runs           : {investigator.metrics.failed_runs}")
+    print(f"  Gemini Interaction Calls: {investigator.metrics.gemini_calls}")
+    print(f"  Loop Stops            : {investigator.metrics.loop_stops}")
+    print(f"  Step-Limit Stops      : {investigator.metrics.step_limit_stops}\n")
+
+    _section("5. ASK THE FINANCE CONTROLLER — GROUNDED Q&A")
+    qa = FinanceControllerQA(batch_result)
+    for question in [
+        "How many cases require human review?",
+        "Which records have tax mismatches?",
+        "Show duplicate-reference exceptions.",
+    ]:
+        result = qa.answer_question(question)
+        print(f"  Q: {question}")
+        print(f"  A: {result.answer}")
+        print(f"     Retrieved records: {len(result.evidence)} | AI: {result.ai_status} | Latency: {result.latency_seconds:.4f}s\n")
+
     # ══════════════════════════════════════════════════════════════════════
-    # SECTION 4 — DETERMINISTIC BASELINE VS ML-ASSISTED MATCHING
+    # SECTION 6 — DETERMINISTIC BASELINE VS ML-ASSISTED MATCHING
     # ══════════════════════════════════════════════════════════════════════
     _section("4. DETERMINISTIC BASELINE VS ML-ASSISTED MATCHING")
     print(f"\n  {'Metric':<35} | {'Baseline (Deterministic)':<24} | {'ML-Assisted (Thresh=0.90)':<24}")

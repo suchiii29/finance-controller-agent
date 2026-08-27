@@ -85,3 +85,11 @@ The generator uses a fixed random seed of **42**. Running with the same seed alw
 - [ ] **Milestone 3** – AI reconciliation agent
 - [ ] **Milestone 4** – Report generation
 - [ ] **Milestone 5** – Dashboard
+
+## Controller Boundaries
+
+- **Deterministic verification** checks amount, date, reference, and invoice-versus-ledger tax values. Tax arithmetic is performed by Python; missing or mismatched tax is escalated and never inferred.
+- **ML matching** scores residual candidates only; it does not approve accounting outcomes.
+- **Agent orchestration** retains the authoritative reconciliation status, recommendation, human-review requirement, and audit event.
+- **Gemini reasoning** explains verified exception evidence with strict structured validation and safe fallback. It cannot change controller decisions.
+- **Ask the Finance Controller** retrieves only relevant `AgentDecision` and `AuditEvent` records. Python retrieval is the factual source of truth; Gemini is optional explanation over that evidence and never receives the entire dataset.

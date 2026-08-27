@@ -19,6 +19,8 @@ GROUND TRUTH IS NEVER ACCESSED DURING INFERENCE.
 from __future__ import annotations
 
 import time
+import json
+import joblib
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Optional, List, Dict, Tuple, Any
@@ -69,6 +71,37 @@ FEATURE_NAMES = [
     "date_in_tol_t2",
     "candidate_count",
 ]
+
+MODEL_ARTIFACT_PATH = Path(__file__).parent.parent / "models" / "match_model.joblib"
+MODEL_METADATA_PATH = Path(__file__).parent.parent / "models" / "match_model_metadata.json"
+
+
+class ModelArtifactError(RuntimeError):
+    """Raised when the offline ML model artifact cannot be used safely."""
+
+
+def load_model_artifact(
+    artifact_path: Path = MODEL_ARTIFACT_PATH,
+    metadata_path: Path = MODEL_METADATA_PATH,
+) -> tuple[Pipeline, dict[str, Any]]:
+    """Load and validate a model produced by the offline training entry point."""
+    if not artifact_path.exists():
+        raise ModelArtifactError(f"ML model artifact missing: {artifact_path}")
+    if not metadata_path.exists():
+        raise ModelArtifactError(f"ML model metadata missing: {metadata_path}")
+    try:
+        artifact = joblib.load(artifact_path)
+        with metadata_path.open("r", encoding="utf-8") as handle:
+            metadata = json.load(handle)
+    except Exception:
+        raise ModelArtifactError("ML model artifact could not be loaded safely") from None
+    if not isinstance(artifact, Pipeline) or not isinstance(metadata, dict):
+        raise ModelArtifactError("ML model artifact has an incompatible format")
+    if metadata.get("feature_names") != FEATURE_NAMES:
+        raise ModelArtifactError("ML model feature set is incompatible with runtime inference")
+    if not hasattr(artifact, "predict_proba"):
+        raise ModelArtifactError("ML model artifact does not support probability inference")
+    return artifact, metadata
 
 
 def extract_pair_features(
@@ -251,6 +284,16 @@ class MLReconciliationMatcher(ReconciliationMatcher):
         acc = self.model_pipeline.score(X_train, y_train)
         return float(acc)
 
+    def load_model_artifact(
+        self,
+        artifact_path: Path = MODEL_ARTIFACT_PATH,
+        metadata_path: Path = MODEL_METADATA_PATH,
+    ) -> dict[str, Any]:
+        """Load an offline-fitted model; never trains or reads ground truth."""
+        self.model_pipeline, metadata = load_model_artifact(artifact_path, metadata_path)
+        self.is_fitted = True
+        return metadata
+
     def _score_candidate_ml(
         self,
         anchor: dict,
@@ -286,7 +329,10 @@ class MLReconciliationMatcher(ReconciliationMatcher):
 
         # Otherwise, run ML Tier 3 on unclaimed residual candidates
         if not self.is_fitted or self.model_pipeline is None:
-            self.train_model()
+            return SourceMatch(
+                source=source_name, record_id=None, tier=0,
+                confidence=0.0, reason="ML_MODEL_ARTIFACT_UNAVAILABLE → NO_MATCH",
+            )
 
         unclaimed_cands = [c for c in candidates if c["record_id"] not in claimed]
         if not unclaimed_cands:
@@ -424,9 +470,6 @@ def _determine_status_ml(
 
 
     def reconcile(self) -> ReconciliationResult:
-        if not self.is_fitted:
-            self.train_model()
-
         if not self._ledger_records:
             self.load_sources()
 

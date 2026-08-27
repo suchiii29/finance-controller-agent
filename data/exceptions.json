@@ -1,254 +1,110 @@
 [
   {
+    "run_id": "RUN-EF25C5D4DAC6",
     "ledger_id": "LED-0005",
-    "final_status": "PARTIAL",
-    "risk_level": "MEDIUM",
-    "detailed_explanation": "Ledger record LED-0005 reconciled across matched feeds (invoice, settlement). Missing sources: bank. Recommended Action: Escalate: Missing primary bank feed \u2013 cash control risk.",
-    "recommended_action": "Escalate: Missing primary bank feed \u2013 cash control risk",
-    "evidence_summary": {
-      "matcher_reason": "Partial match \u2014 missing: ['bank']. Found: invoice=INV-0005(T1,c=1.00) | settlement=STL-0005(T1,c=1.00)"
+    "reconciliation_status": "PARTIAL",
+    "controller_decision": "PARTIAL",
+    "exception_type": "missing_source_record",
+    "source_ids": {
+      "bank": null,
+      "invoice": "INV-0005",
+      "settlement": "STL-0005"
     },
-    "safe_auto_resolved": false,
-    "original_status": "PARTIAL",
     "confidence": 1.0,
-    "missing_sources": [
-      "bank"
-    ],
-    "matched_sources": [
-      "invoice",
-      "settlement"
-    ],
-    "explanation": "Ledger record LED-0005 reconciled across matched feeds (invoice, settlement). Missing sources: bank. Recommended Action: Escalate: Missing primary bank feed \u2013 cash control risk."
+    "recommendation": "Escalate: Missing primary bank feed \u2013 cash control risk",
+    "requires_human_review": true,
+    "tax_status": "TAX_MATCH",
+    "gemini_status": "API_KEY_MISSING",
+    "audit_event_id": "AUD-070A2F492699"
   },
   {
-    "ledger_id": "LED-0014",
-    "final_status": "SAFE_AUTO_RESOLVED",
-    "risk_level": "LOW",
-    "detailed_explanation": "Ledger record LED-0014 reconciled across matched feeds (bank, settlement). Missing sources: invoice. Recommended Action: Auto-resolve: Non-cash timing lag (invoice missing).",
-    "recommended_action": "Auto-resolve: Non-cash timing lag (invoice missing)",
-    "evidence_summary": {
-      "matcher_reason": "Partial match \u2014 missing: ['invoice']. Found: bank=BNK-0014(T1,c=1.00) | settlement=STL-0014(T1,c=1.00)"
-    },
-    "safe_auto_resolved": true,
-    "original_status": "PARTIAL",
-    "confidence": 1.0,
-    "missing_sources": [
-      "invoice"
-    ],
-    "matched_sources": [
-      "bank",
-      "settlement"
-    ],
-    "explanation": "Ledger record LED-0014 reconciled across matched feeds (bank, settlement). Missing sources: invoice. Recommended Action: Auto-resolve: Non-cash timing lag (invoice missing)."
-  },
-  {
+    "run_id": "RUN-EF25C5D4DAC6",
     "ledger_id": "LED-0026",
-    "final_status": "PARTIAL",
-    "risk_level": "MEDIUM",
-    "detailed_explanation": "Ledger record LED-0026 reconciled across matched feeds (invoice, settlement). Missing sources: bank. Recommended Action: Escalate: Missing primary bank feed \u2013 cash control risk.",
-    "recommended_action": "Escalate: Missing primary bank feed \u2013 cash control risk",
-    "evidence_summary": {
-      "matcher_reason": "Partial match \u2014 missing: ['bank']. Found: invoice=INV-0026(T1,c=1.00) | settlement=STL-0026(T1,c=1.00)"
+    "reconciliation_status": "PARTIAL",
+    "controller_decision": "PARTIAL",
+    "exception_type": "missing_source_record",
+    "source_ids": {
+      "bank": null,
+      "invoice": "INV-0026",
+      "settlement": "STL-0026"
     },
-    "safe_auto_resolved": false,
-    "original_status": "PARTIAL",
     "confidence": 1.0,
-    "missing_sources": [
-      "bank"
-    ],
-    "matched_sources": [
-      "invoice",
-      "settlement"
-    ],
-    "explanation": "Ledger record LED-0026 reconciled across matched feeds (invoice, settlement). Missing sources: bank. Recommended Action: Escalate: Missing primary bank feed \u2013 cash control risk."
+    "recommendation": "Escalate: Missing primary bank feed \u2013 cash control risk",
+    "requires_human_review": true,
+    "tax_status": "TAX_MATCH",
+    "gemini_status": "API_KEY_MISSING",
+    "audit_event_id": "AUD-18670884A6E3"
   },
   {
-    "ledger_id": "LED-0029",
-    "final_status": "SAFE_AUTO_RESOLVED",
-    "risk_level": "LOW",
-    "detailed_explanation": "Ledger record LED-0029 reconciled across matched feeds (bank, settlement). Missing sources: invoice. Recommended Action: Auto-resolve: Non-cash timing lag (invoice missing).",
-    "recommended_action": "Auto-resolve: Non-cash timing lag (invoice missing)",
-    "evidence_summary": {
-      "matcher_reason": "Partial match \u2014 missing: ['invoice']. Found: bank=BNK-0029(T1,c=1.00) | settlement=STL-0029(T1,c=1.00)"
+    "run_id": "RUN-EF25C5D4DAC6",
+    "ledger_id": "LED-0030",
+    "reconciliation_status": "EXCEPTION",
+    "controller_decision": "EXCEPTION",
+    "exception_type": "tax_missing",
+    "source_ids": {
+      "bank": "BNK-0030",
+      "invoice": "INV-0030",
+      "settlement": "STL-0030"
     },
-    "safe_auto_resolved": true,
-    "original_status": "PARTIAL",
-    "confidence": 1.0,
-    "missing_sources": [
-      "invoice"
-    ],
-    "matched_sources": [
-      "bank",
-      "settlement"
-    ],
-    "explanation": "Ledger record LED-0029 reconciled across matched feeds (bank, settlement). Missing sources: invoice. Recommended Action: Auto-resolve: Non-cash timing lag (invoice missing)."
+    "confidence": 0.0,
+    "recommendation": "Escalate: Review tax posting",
+    "requires_human_review": true,
+    "tax_status": "TAX_MISSING",
+    "gemini_status": "API_KEY_MISSING",
+    "audit_event_id": "AUD-689193457671"
   },
   {
-    "ledger_id": "LED-0035",
-    "final_status": "SAFE_AUTO_RESOLVED",
-    "risk_level": "LOW",
-    "detailed_explanation": "Ledger record LED-0035 reconciled across matched feeds (bank, invoice). Missing sources: settlement. Recommended Action: Auto-resolve: Settlement sync delay.",
-    "recommended_action": "Auto-resolve: Settlement sync delay",
-    "evidence_summary": {
-      "matcher_reason": "Partial match \u2014 missing: ['settlement']. Found: bank=BNK-0035(T1,c=1.00) | invoice=INV-0035(T1,c=1.00)"
+    "run_id": "RUN-EF25C5D4DAC6",
+    "ledger_id": "LED-0034",
+    "reconciliation_status": "EXCEPTION",
+    "controller_decision": "EXCEPTION",
+    "exception_type": "duplicate_reference",
+    "source_ids": {
+      "bank": "BNK-0034",
+      "invoice": "INV-0034",
+      "settlement": "STL-0034"
     },
-    "safe_auto_resolved": true,
-    "original_status": "PARTIAL",
-    "confidence": 1.0,
-    "missing_sources": [
-      "settlement"
-    ],
-    "matched_sources": [
-      "bank",
-      "invoice"
-    ],
-    "explanation": "Ledger record LED-0035 reconciled across matched feeds (bank, invoice). Missing sources: settlement. Recommended Action: Auto-resolve: Settlement sync delay."
+    "confidence": 0.0,
+    "recommendation": "Escalate: Duplicate reference collision",
+    "requires_human_review": true,
+    "tax_status": "TAX_MATCH",
+    "gemini_status": "API_KEY_MISSING",
+    "audit_event_id": "AUD-6C4307C41DC8"
   },
   {
-    "ledger_id": "LED-0040",
-    "final_status": "SAFE_AUTO_RESOLVED",
-    "risk_level": "LOW",
-    "detailed_explanation": "Ledger record LED-0040 reconciled across matched feeds (bank, invoice). Missing sources: settlement. Recommended Action: Auto-resolve: Settlement sync delay.",
-    "recommended_action": "Auto-resolve: Settlement sync delay",
-    "evidence_summary": {
-      "matcher_reason": "Partial match \u2014 missing: ['settlement']. Found: bank=BNK-0040(T1,c=1.00) | invoice=INV-0040(T1,c=1.00)"
+    "run_id": "RUN-EF25C5D4DAC6",
+    "ledger_id": "LED-0084",
+    "reconciliation_status": "EXCEPTION",
+    "controller_decision": "EXCEPTION",
+    "exception_type": "duplicate_reference",
+    "source_ids": {
+      "bank": "BNK-0084",
+      "invoice": "INV-0084",
+      "settlement": "STL-0084"
     },
-    "safe_auto_resolved": true,
-    "original_status": "PARTIAL",
-    "confidence": 1.0,
-    "missing_sources": [
-      "settlement"
-    ],
-    "matched_sources": [
-      "bank",
-      "invoice"
-    ],
-    "explanation": "Ledger record LED-0040 reconciled across matched feeds (bank, invoice). Missing sources: settlement. Recommended Action: Auto-resolve: Settlement sync delay."
+    "confidence": 0.0,
+    "recommendation": "Escalate: Duplicate reference collision",
+    "requires_human_review": true,
+    "tax_status": "TAX_MATCH",
+    "gemini_status": "API_KEY_MISSING",
+    "audit_event_id": "AUD-B14284B208F2"
   },
   {
-    "ledger_id": "LED-0045",
-    "final_status": "SAFE_AUTO_RESOLVED",
-    "risk_level": "LOW",
-    "detailed_explanation": "Ledger record LED-0045 reconciled across matched feeds (bank, settlement). Missing sources: invoice. Recommended Action: Auto-resolve: Non-cash timing lag (invoice missing).",
-    "recommended_action": "Auto-resolve: Non-cash timing lag (invoice missing)",
-    "evidence_summary": {
-      "matcher_reason": "Partial match \u2014 missing: ['invoice']. Found: bank=BNK-0045(T1,c=1.00) | settlement=STL-0045(T1,c=1.00)"
-    },
-    "safe_auto_resolved": true,
-    "original_status": "PARTIAL",
-    "confidence": 1.0,
-    "missing_sources": [
-      "invoice"
-    ],
-    "matched_sources": [
-      "bank",
-      "settlement"
-    ],
-    "explanation": "Ledger record LED-0045 reconciled across matched feeds (bank, settlement). Missing sources: invoice. Recommended Action: Auto-resolve: Non-cash timing lag (invoice missing)."
-  },
-  {
-    "ledger_id": "LED-0049",
-    "final_status": "SAFE_AUTO_RESOLVED",
-    "risk_level": "LOW",
-    "detailed_explanation": "Ledger record LED-0049 reconciled across matched feeds (bank, invoice). Missing sources: settlement. Recommended Action: Auto-resolve: Settlement sync delay.",
-    "recommended_action": "Auto-resolve: Settlement sync delay",
-    "evidence_summary": {
-      "matcher_reason": "Partial match \u2014 missing: ['settlement']. Found: bank=BNK-0049(T1,c=1.00) | invoice=INV-0049(T1,c=1.00)"
-    },
-    "safe_auto_resolved": true,
-    "original_status": "PARTIAL",
-    "confidence": 1.0,
-    "missing_sources": [
-      "settlement"
-    ],
-    "matched_sources": [
-      "bank",
-      "invoice"
-    ],
-    "explanation": "Ledger record LED-0049 reconciled across matched feeds (bank, invoice). Missing sources: settlement. Recommended Action: Auto-resolve: Settlement sync delay."
-  },
-  {
-    "ledger_id": "LED-0061",
-    "final_status": "SAFE_AUTO_RESOLVED",
-    "risk_level": "LOW",
-    "detailed_explanation": "Ledger record LED-0061 reconciled across matched feeds (bank, settlement). Missing sources: invoice. Recommended Action: Auto-resolve: Non-cash timing lag (invoice missing).",
-    "recommended_action": "Auto-resolve: Non-cash timing lag (invoice missing)",
-    "evidence_summary": {
-      "matcher_reason": "Partial match \u2014 missing: ['invoice']. Found: bank=BNK-0061(T1,c=1.00) | settlement=STL-0061(T1,c=1.00)"
-    },
-    "safe_auto_resolved": true,
-    "original_status": "PARTIAL",
-    "confidence": 1.0,
-    "missing_sources": [
-      "invoice"
-    ],
-    "matched_sources": [
-      "bank",
-      "settlement"
-    ],
-    "explanation": "Ledger record LED-0061 reconciled across matched feeds (bank, settlement). Missing sources: invoice. Recommended Action: Auto-resolve: Non-cash timing lag (invoice missing)."
-  },
-  {
-    "ledger_id": "LED-0085",
-    "final_status": "SAFE_AUTO_RESOLVED",
-    "risk_level": "LOW",
-    "detailed_explanation": "Ledger record LED-0085 reconciled across matched feeds (bank, settlement). Missing sources: invoice. Recommended Action: Auto-resolve: Non-cash timing lag (invoice missing).",
-    "recommended_action": "Auto-resolve: Non-cash timing lag (invoice missing)",
-    "evidence_summary": {
-      "matcher_reason": "Partial match \u2014 missing: ['invoice']. Found: bank=BNK-0085(T1,c=1.00) | settlement=STL-0085(T1,c=1.00)"
-    },
-    "safe_auto_resolved": true,
-    "original_status": "PARTIAL",
-    "confidence": 1.0,
-    "missing_sources": [
-      "invoice"
-    ],
-    "matched_sources": [
-      "bank",
-      "settlement"
-    ],
-    "explanation": "Ledger record LED-0085 reconciled across matched feeds (bank, settlement). Missing sources: invoice. Recommended Action: Auto-resolve: Non-cash timing lag (invoice missing)."
-  },
-  {
-    "ledger_id": "LED-0086",
-    "final_status": "SAFE_AUTO_RESOLVED",
-    "risk_level": "LOW",
-    "detailed_explanation": "Ledger record LED-0086 reconciled across matched feeds (bank, settlement). Missing sources: invoice. Recommended Action: Auto-resolve: Non-cash timing lag (invoice missing).",
-    "recommended_action": "Auto-resolve: Non-cash timing lag (invoice missing)",
-    "evidence_summary": {
-      "matcher_reason": "Partial match \u2014 missing: ['invoice']. Found: bank=BNK-0086(T1,c=1.00) | settlement=STL-0086(T1,c=1.00)"
-    },
-    "safe_auto_resolved": true,
-    "original_status": "PARTIAL",
-    "confidence": 1.0,
-    "missing_sources": [
-      "invoice"
-    ],
-    "matched_sources": [
-      "bank",
-      "settlement"
-    ],
-    "explanation": "Ledger record LED-0086 reconciled across matched feeds (bank, settlement). Missing sources: invoice. Recommended Action: Auto-resolve: Non-cash timing lag (invoice missing)."
-  },
-  {
+    "run_id": "RUN-EF25C5D4DAC6",
     "ledger_id": "LED-0095",
-    "final_status": "PARTIAL",
-    "risk_level": "MEDIUM",
-    "detailed_explanation": "Ledger record LED-0095 reconciled across matched feeds (invoice, settlement). Missing sources: bank. Recommended Action: Escalate: Missing primary bank feed \u2013 cash control risk.",
-    "recommended_action": "Escalate: Missing primary bank feed \u2013 cash control risk",
-    "evidence_summary": {
-      "matcher_reason": "Partial match \u2014 missing: ['bank']. Found: invoice=INV-0095(T1,c=1.00) | settlement=STL-0095(T1,c=1.00)"
+    "reconciliation_status": "PARTIAL",
+    "controller_decision": "PARTIAL",
+    "exception_type": "missing_source_record",
+    "source_ids": {
+      "bank": null,
+      "invoice": "INV-0095",
+      "settlement": "STL-0095"
     },
-    "safe_auto_resolved": false,
-    "original_status": "PARTIAL",
     "confidence": 1.0,
-    "missing_sources": [
-      "bank"
-    ],
-    "matched_sources": [
-      "invoice",
-      "settlement"
-    ],
-    "explanation": "Ledger record LED-0095 reconciled across matched feeds (invoice, settlement). Missing sources: bank. Recommended Action: Escalate: Missing primary bank feed \u2013 cash control risk."
+    "recommendation": "Escalate: Missing primary bank feed \u2013 cash control risk",
+    "requires_human_review": true,
+    "tax_status": "TAX_MATCH",
+    "gemini_status": "API_KEY_MISSING",
+    "audit_event_id": "AUD-DFB1F0CA9FF8"
   }
 ]
