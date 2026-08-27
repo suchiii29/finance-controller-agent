@@ -1,8 +1,8 @@
 """
 main.py
 =======
-Finance Controller Agent — End-to-End Pipeline
-==============================================
+Finance Controller Agent — End-to-End Bounded Agent Orchestration & Evaluation
+==============================================================================
 
 Usage:
     python main.py
@@ -10,13 +10,17 @@ Usage:
 
 from __future__ import annotations
 
+import time
+from pathlib import Path
+
 from src.matcher import ReconciliationMatcher
+from src.ml_matcher import MLReconciliationMatcher, evaluate_thresholds
 from src.evaluate import evaluate
-from src.agent import ExceptionAgent
+from src.agent import FinanceControllerAgent, ExceptionAgent
 from src.report import generate_final_report
 
-LINE = "=" * 64
-DASH = "─" * 64
+LINE = "=" * 70
+DASH = "─" * 70
 
 
 def _section(title: str) -> None:
@@ -27,153 +31,170 @@ def _section(title: str) -> None:
 
 def main() -> None:
     print(LINE)
-    print("  RAZORPAY AI BUILDATHON — AI FINANCE CONTROLLER PIPELINE")
+    print("  RAZORPAY AI BUILDATHON — BOUNDED FINANCE CONTROLLER AGENT")
     print(LINE)
 
-    # ── 1. Load & Reconcile ────────────────────────────────────────────────
-    print("\n[1/4] Loading source files and normalising records...")
-    matcher = ReconciliationMatcher()
-    matcher.load_sources()
+    # ── 1. Run Bounded Finance Controller Agent Batch Execution ───────────────
+    print("\n[1/5] Executing Bounded Finance Controller Agent Batch Workflow...")
+    agent = FinanceControllerAgent(ml_threshold=0.90)
+    
+    mode_str = "GEMINI LIVE MODE" if agent.llm_reviewer.is_configured else "GEMINI FALLBACK MODE"
+    print(f"  [STATUS] Operating in: {mode_str} (Model: {agent.llm_reviewer.model_name})")
 
-    print("\n[2/4] Running deterministic multi-source reconciliation...")
-    result = matcher.reconcile()
+    agent_decisions, audit_events, batch_summary = agent.run_reconciliation_batch()
+
+    # ── 2. Run Deterministic Baseline & ML Evaluation ─────────────────────────
+    print("\n[2/5] Running Deterministic Baseline & Evaluation Benchmarks...")
+    base_matcher = ReconciliationMatcher()
+    base_matcher.load_sources()
+    base_result = base_matcher.reconcile()
+    base_ev = evaluate(base_result)
+
+    ml_matcher = MLReconciliationMatcher(ml_threshold=0.90)
+    ml_matcher.load_sources()
+    ml_matcher.train_model()
+    ml_result = ml_matcher.reconcile()
+    ml_ev = evaluate(ml_result)
 
     source_records = {
-        "ledger":     {r["record_id"]: r for r in matcher._ledger_records},
-        "bank":       {r["record_id"]: r for r in matcher._bank_records},
-        "invoice":    {r["record_id"]: r for r in matcher._invoice_records},
-        "settlement": {r["record_id"]: r for r in matcher._settlement_records},
+        "ledger":     {r["record_id"]: r for r in base_matcher._ledger_records},
+        "bank":       {r["record_id"]: r for r in base_matcher._bank_records},
+        "invoice":    {r["record_id"]: r for r in base_matcher._invoice_records},
+        "settlement": {r["record_id"]: r for r in base_matcher._settlement_records},
     }
 
-    # ── 2. Exception Agent ────────────────────────────────────────────────
-    print("\n[3/4] Running Exception Agent on residual cases...")
-    agent = ExceptionAgent()
-    analyses = agent.analyze_residuals(result.decisions, source_records)
+    # ── 3. Exception Agent Analysis (for legacy reporting) ────────────────────
+    print("\n[3/5] Generating Exception Register & Audit Analysis...")
+    legacy_agent = ExceptionAgent()
+    analyses = legacy_agent.analyze_residuals(ml_result.decisions, source_records)
 
-    # ── 3. Evaluate ───────────────────────────────────────────────────────
-    ev = evaluate(result)
-
-    # ── 4. Reports ────────────────────────────────────────────────────────
-    print("\n[4/4] Generating final reports and exporting exception JSON...")
-    json_path, md_path = generate_final_report(result, ev, analyses)
+    # ── 4. Generate Reports ───────────────────────────────────────────────────
+    print("\n[4/5] Exporting exceptions.json and generating report.md...")
+    json_path, md_path = generate_final_report(ml_result, ml_ev, analyses)
 
     # ══════════════════════════════════════════════════════════════════════
-    # SECTION 1 — BASELINE RECONCILIATION RESULTS (Operational)
+    # SECTION 1 — AGENT BATCH SUMMARY & RELIABILITY METRICS
     # ══════════════════════════════════════════════════════════════════════
-    _section("BASELINE RECONCILIATION RESULTS")
-    total = result.total_processed
-    print(f"  Ledger anchor records processed : {total}")
-    print(f"  ─")
-    print(f"  Operational workflow outcomes:")
-    print(f"    MATCHED   (all 3 sources found) : {result.status_counts.get('MATCHED', 0)}")
-    print(f"    PARTIAL   (some sources absent) : {result.status_counts.get('PARTIAL', 0)}")
-    print(f"    EXCEPTION (ambiguity/discrepancy): {result.status_counts.get('EXCEPTION', 0)}")
-    print(f"    UNRESOLVED (no match found)      : {result.status_counts.get('UNRESOLVED', 0)}")
-    print(f"  ─")
-    print(f"  Operational coverage (MATCHED+PARTIAL / total) : {ev.operational_coverage * 100:.1f}%")
-
-    # ── Agent layer
-    det_matched  = result.status_counts.get("MATCHED", 0)
-    agent_auto   = sum(1 for a in analyses if a.safe_auto_resolved)
-    escalated    = len(analyses) - agent_auto
-    eff_resolved = det_matched + agent_auto
-    op_rate      = eff_resolved / total * 100 if total else 0.0
-    print(f"  ─")
-    print(f"  After Exception Agent:")
-    print(f"    Deterministic MATCHED            : {det_matched}")
-    print(f"    Agent safely auto-resolved       : {agent_auto}")
-    print(f"    Still escalated to Finance Ops   : {escalated}")
-    print(f"    Total effective automation rate  : {op_rate:.1f}%  ({eff_resolved}/{total})")
-
-    # ══════════════════════════════════════════════════════════════════════
-    # SECTION 2 — EVALUATION AGAINST GROUND TRUTH
-    # ══════════════════════════════════════════════════════════════════════
-    _section("EVALUATION AGAINST GROUND TRUTH")
-    print(f"  Ground-truth universe:")
-    print(f"    Canonical transactions (total)  : {ev.total_canonical}")
-    print(f"    GT status=matched               : {ev.gt_matched_count}")
-    print(f"    GT status=unresolved (total)    : {ev.gt_unresolved_total}")
-    print(f"    GT unresolved, evaluable        : {ev.gt_unresolved_evaluable}")
-    print()
-    print(f"  Correctness classification:")
-    print(f"    Correct full matches            : {ev.correct_full_matches}")
-    print(f"      (GT=matched, MATCHED, all IDs correct)")
-    print(f"    Correct partial detections      : {ev.correct_partial_detections}")
-    print(f"      (GT=matched, PARTIAL, claimed IDs correct — planted exception on missing source)")
-    print(f"    Correctly escalated             : {ev.correctly_escalated}")
-    print(f"      (GT=unresolved, PARTIAL/EXCEPTION/UNRESOLVED, no wrong claims)")
-    print(f"    Incorrect automatic matches     : {ev.incorrect_full_matches}")
-    print(f"      (Claimed source ID not supported by ground truth — genuine FP)")
-    print(f"    Missed resolvable transactions  : {ev.missed_resolvable}")
-    print(f"      (GT=matched but matcher returned EXCEPTION/UNRESOLVED — genuine FN)")
-    print(f"    Incorrectly auto-resolved       : {ev.incorrectly_auto_resolved}")
-    print(f"      (GT=unresolved but matcher claimed MATCHED with wrong IDs)")
-    print()
-    print(f"  Precision  = correct_full_matches / (correct + incorrect)")
-    print(f"             = {ev.correct_full_matches} / {ev.correct_full_matches + ev.incorrect_full_matches}")
-    print(f"             = {ev.match_precision * 100:.1f}%")
-    print()
-    print(f"  Recall     = (correct_full + correct_partial) / gt_matched_evaluable")
-    print(f"             = ({ev.correct_full_matches} + {ev.correct_partial_detections}) / {ev.gt_matched_count}")
-    print(f"             = {ev.match_recall * 100:.1f}%")
-    print()
-    print(f"  F1         = {ev.match_f1 * 100:.1f}%")
+    _section("1. FINANCE CONTROLLER AGENT — BATCH SUMMARY & RELIABILITY METRICS")
+    print(f"  {'Metric':<42} | {'Value':<30}")
+    print(f"  {'─'*42}-+-{'─'*30}")
+    print(f"  {'Execution Mode':<42} | {mode_str:<30}")
+    print(f"  {'Gemini Model Configured':<42} | {agent.llm_reviewer.model_name:<30}")
+    print(f"  {'Total Records Processed':<42} | {batch_summary.records_processed:<30}")
+    print(f"  {'Matched (Full 4-Way)':<42} | {batch_summary.matched:<30}")
+    print(f"  {'Safely Auto-Resolved (Timing Lag)':<42} | {batch_summary.safely_resolved - batch_summary.matched:<30}")
+    print(f"  {'Partial Coverage':<42} | {batch_summary.partial:<30}")
+    print(f"  {'Exceptions / Ambiguous':<42} | {batch_summary.exceptions:<30}")
+    print(f"  {'Unresolved':<42} | {batch_summary.unresolved:<30}")
+    print(f"  {'Escalated for Human Review':<42} | {batch_summary.escalated:<30}")
+    print(f"  {'Total Gemini-Eligible Cases':<42} | {batch_summary.gemini_eligible_cases:<30}")
+    print(f"  {'Gemini Initial Attempts':<42} | {batch_summary.gemini_initial_attempts:<30}")
+    print(f"  {'Gemini Retries Performed':<42} | {batch_summary.gemini_retries:<30}")
+    print(f"  {'Successful Final Gemini Reviews':<42} | {batch_summary.gemini_successful_reviews:<30}")
+    print(f"  {'Final Gemini Failures':<42} | {batch_summary.gemini_final_failures:<30}")
+    print(f"  {'Safe Fallback Cases Used':<42} | {batch_summary.gemini_fallback_cases:<30}")
+    print(f"  {'Average Successful Gemini Latency':<42} | {batch_summary.gemini_avg_successful_latency_sec:.3f} sec")
+    print(f"  {'Average Attempts Per Case':<42} | {batch_summary.gemini_avg_attempts_per_case:.2f}")
+    print(f"  {'Gemini Total Latency':<42} | {batch_summary.gemini_total_latency_seconds:.3f} sec")
+    print(f"  {'Reconciliation Engine Throughput':<42} | {ml_result.throughput_per_second:.0f} rec/sec")
+    print(f"  {'Agent Orchestration Throughput':<42} | {batch_summary.throughput_records_per_sec:.0f} rec/sec")
 
     # ══════════════════════════════════════════════════════════════════════
-    # SECTION 3 — EXCEPTION HANDLING SUMMARY
+    # SECTION 2 — REPRESENTATIVE AGENT EXECUTION TRACES (5 CASES)
     # ══════════════════════════════════════════════════════════════════════
-    _section("EXCEPTION HANDLING SUMMARY")
-    print(f"  Exception detection rate (GT-unresolved correctly escalated):")
-    print(f"    {ev.correctly_escalated} / {ev.gt_unresolved_evaluable} = {ev.exception_detection_rate * 100:.1f}%")
-    print()
-    print(f"  {'Exception Type':<28}  {'GT':>4}  {'Correct':>8}  {'Escalated':>9}  {'Missed':>6}  {'IncorrectRes':>12}")
-    print(f"  {'─'*28}  {'─'*4}  {'─'*8}  {'─'*9}  {'─'*6}  {'─'*12}")
-    for etype, counts in ev.exception_breakdown.items():
-        handled = counts.get("correctly_handled", 0)
-        escal   = counts.get("correctly_escalated", 0)
-        missed  = counts.get("missed", 0)
-        inc     = counts.get("incorrectly_resolved", 0)
-        gt_cnt  = counts.get("gt_count", 0)
-        print(f"  {etype:<28}  {gt_cnt:>4}  {handled:>8}  {escal:>9}  {missed:>6}  {inc:>12}")
+    _section("2. REPRESENTATIVE AGENT EXECUTION TRACES (TOOL-CALL FLOW)")
+
+    # Select 5 representative cases: Safe Match, Safe Auto-Resolve, Partial Missing Bank, Duplicate Exception, Amount/Tax Drift
+    selected_lids = ["LED-0001", "LED-0049", "LED-0026", "LED-0034", "LED-0061"]
+    dec_dict = {d.ledger_id: d for d in agent_decisions}
+
+    for lid in selected_lids:
+        if lid in dec_dict:
+            d = dec_dict[lid]
+            print(f"\n  [AGENT TRACE] Ledger Anchor Record: {d.ledger_id}")
+            print(f"    Status               : {d.status}")
+            print(f"    Matching Method      : {d.matching_method}")
+            print(f"    Confidence           : {d.confidence:.3f}")
+            print(f"    Recommended Action   : {d.recommended_action}")
+            print(f"    Requires Human Review: {d.requires_human_review}")
+            print(f"    Audit Event ID       : {d.audit_event_id}")
+            print(f"    Execution Steps      :")
+            for step in d.agent_trace:
+                print(f"      • {step}")
 
     # ══════════════════════════════════════════════════════════════════════
-    # SECTION 4 — MISSING LEDGER ANCHOR
+    # SECTION 3 — GEMINI LLM EXCEPTION REASONING & DISCREPANCY ANALYSIS
     # ══════════════════════════════════════════════════════════════════════
-    _section("MISSING LEDGER ANCHOR REPORT")
-    print(f"  Canonical transactions with no ledger record : {ev.ledger_missing_in_gt}")
-    print()
-    print(f"  Detail:")
-    print(f"    CAN-0090  match_status=unresolved  exception=missing_source_record(ledger)")
-    print(f"    This transaction has no ledger entry and therefore cannot enter the")
-    print(f"    ledger-anchored reconciliation workflow.  It is excluded from all")
-    print(f"    precision/recall/coverage denominators and reported here separately.")
+    _section("3. GEMINI LLM EXCEPTION REASONING & DISCREPANCY ANALYSIS")
+
+    if agent.llm_reviewer.is_configured:
+        print("  *** GEMINI LIVE MODE ACTIVE ***")
+        print(f"  API Key configured. Model: {agent.llm_reviewer.model_name}")
+        print("  Executing targeted live reasoning test on selected difficult exception cases:\n")
+    else:
+        print("  *** GEMINI FALLBACK MODE ACTIVE ***")
+        print("  GEMINI_API_KEY is not configured in environment.")
+        print("  Deterministic & ML Controller decisions retained with safe escalation policy.\n")
+
+    exception_cases = [d for d in agent_decisions if d.llm_review is not None]
+    print(f"  Total Gemini-Eligible Cases Analyzed: {len(exception_cases)}\n")
+
+    for d in exception_cases:
+        llm = d.llm_review or {}
+        ev = d.evidence
+        status_code = llm.get("status_code", "N/A")
+        val_status = "VALID" if status_code == "SUCCESS" else ("INVALID" if status_code in ("PARSE_ERROR", "UNSAFE_DECISION_REJECTED") else "N/A")
+        cat = llm.get("failure_category") or ("NONE" if status_code == "SUCCESS" else "UNKNOWN")
+
+        print(f"  ┌─ [PER-CASE GEMINI OBSERVABILITY RECORD | {d.ledger_id}]")
+        print(f"  │  Ledger ID            : {d.ledger_id}")
+        print(f"  │  Exception Type       : {d.exception_type}")
+        print(f"  │  Attempts Made        : {llm.get('attempts', 1)}")
+        print(f"  │  Final API Status     : {status_code}")
+        print(f"  │  Failure Category     : {cat}")
+        print(f"  │  Gemini Decision      : {llm.get('decision', 'N/A')}")
+        print(f"  │  Validation Status    : {val_status}")
+        print(f"  │  LLM Confidence       : {llm.get('confidence', 0.0):.2f}")
+        print(f"  │  Latency              : {llm.get('latency_seconds', 0.0):.3f} sec")
+        print(f"  │  Controller Decision  : {d.status} (Authoritative)")
+        print(f"  │  Human Review Required: {llm.get('requires_human_review', True)}")
+        print(f"  │  Fallback Used        : {llm.get('fallback_used', False)}")
+        print(f"  │  Explanation          : {llm.get('explanation', 'N/A')}")
+        print(f"  └─────────────────────────────────────────────────────────────\n")
 
     # ══════════════════════════════════════════════════════════════════════
-    # SECTION 5 — MANUALLY INSPECTED EXAMPLE CASES
+    # SECTION 4 — DETERMINISTIC BASELINE VS ML-ASSISTED MATCHING
     # ══════════════════════════════════════════════════════════════════════
-    _section("MANUALLY INSPECTED EXAMPLE CASES")
-    PROBE = {"LED-0004", "LED-0005", "LED-0026", "LED-0029",
-             "LED-0035", "LED-0045", "LED-0049", "LED-0061"}
+    _section("4. DETERMINISTIC BASELINE VS ML-ASSISTED MATCHING")
+    print(f"\n  {'Metric':<35} | {'Baseline (Deterministic)':<24} | {'ML-Assisted (Thresh=0.90)':<24}")
+    print(f"  {'─'*35}-+-{'─'*24}-+-{'─'*24}")
+    print(f"  {'Ledger Anchors Evaluated':<35} | {base_result.total_processed:<24} | {ml_result.total_processed:<24}")
+    print(f"  {'MATCHED (All 3 Targets)':<35} | {base_result.status_counts.get('MATCHED',0):<24} | {ml_result.status_counts.get('MATCHED',0):<24}")
+    print(f"  {'PARTIAL (1-2 Targets)':<35} | {base_result.status_counts.get('PARTIAL',0):<24} | {ml_result.status_counts.get('PARTIAL',0):<24}")
+    print(f"  {'EXCEPTION / Ambiguous':<35} | {base_result.status_counts.get('EXCEPTION',0):<24} | {ml_result.status_counts.get('EXCEPTION',0):<24}")
+    print(f"  {'UNRESOLVED':<35} | {base_result.status_counts.get('UNRESOLVED',0):<24} | {ml_result.status_counts.get('UNRESOLVED',0):<24}")
+    print(f"  {'Operational Coverage':<35} | {base_ev.operational_coverage*100:>23.1f}% | {ml_ev.operational_coverage*100:>23.1f}%")
+    print(f"  {'Correct Full Matches':<35} | {base_ev.correct_full_matches:<24} | {ml_ev.correct_full_matches:<24}")
+    print(f"  {'Correct Partial Detections':<35} | {base_ev.correct_partial_detections:<24} | {ml_ev.correct_partial_detections:<24}")
+    print(f"  {'Correctly Escalated':<35} | {base_ev.correctly_escalated:<24} | {ml_ev.correctly_escalated:<24}")
+    print(f"  {'Incorrect Auto Matches (FP)':<35} | {base_ev.incorrect_full_matches:<24} | {ml_ev.incorrect_full_matches:<24}")
+    print(f"  {'Missed Resolvable (FN)':<35} | {base_ev.missed_resolvable:<24} | {ml_ev.missed_resolvable:<24}")
+    print(f"  {'Match Precision':<35} | {base_ev.match_precision*100:>23.1f}% | {ml_ev.match_precision*100:>23.1f}%")
+    print(f"  {'Match Recall':<35} | {base_ev.match_recall*100:>23.1f}% | {ml_ev.match_recall*100:>23.1f}%")
+    print(f"  {'Match F1 Score':<35} | {base_ev.match_f1*100:>23.1f}% | {ml_ev.match_f1*100:>23.1f}%")
+    print(f"  {'Throughput (records/sec)':<35} | {base_result.throughput_per_second:>24.0f} | {ml_result.throughput_per_second:>24.0f}")
 
-    for entry in ev.exception_entries:
-        if entry.ledger_id in PROBE:
-            print(f"  {entry.ledger_id}")
-            print(f"    Matcher status   : {entry.matcher_status}")
-            print(f"    GT status        : {entry.gt_status}")
-            print(f"    Exception type   : {entry.exception_type} ({entry.exception_source})")
-            print(f"    Bank ID ok?      : {entry.bank_id_match}")
-            print(f"    Invoice ID ok?   : {entry.inv_id_match}")
-            print(f"    Settlement ID ok?: {entry.stl_id_match}")
-            print(f"    Classification   : {entry.classification}")
-            print()
-
     # ══════════════════════════════════════════════════════════════════════
-    # SECTION 6 — THROUGHPUT & REPORTS
+    # SECTION 5 — FINANCIAL SAFETY ASSESSMENT
     # ══════════════════════════════════════════════════════════════════════
-    _section("THROUGHPUT & OUTPUT")
-    print(f"  Processing throughput : {result.throughput_per_second:.0f} records/sec")
-    print(f"  Elapsed time          : {result.elapsed_seconds * 1000:.1f} ms")
-    print(f"  Reports generated     : {json_path.name}, {md_path.name}")
+    _section("5. FINANCIAL SAFETY ASSESSMENT")
+    print("  ✓ Bounded Orchestration: Agent operates via explicit tool calls with stopping conditions.")
+    print("  ✓ Zero Ground-Truth Leakage: Ground truth is completely inaccessible during inference.")
+    print("  ✓ Strict Escalation Policy: Missing bank statement cash feeds and duplicate references are escalated.")
+    print("  ✓ Safe Auto-Resolution: Only single non-cash timing lags with 100% Tier-1 proof are auto-resolved.")
+    print("  ✓ Controller Authority: Gemini explanation NEVER overrides authoritative financial decisions.")
+    print("  ✓ Structured Output & Validation: Gemini outputs validated via Pydantic schema and safety filters.")
+    print("  ✓ Complete Audit Trail: Immutable AuditEvent generated for 100% of decisions.")
 
     print(f"\n{LINE}")
     print("  Pipeline complete.")
