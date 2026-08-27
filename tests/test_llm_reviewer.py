@@ -291,7 +291,8 @@ class TestGeminiLLMReviewer(unittest.TestCase):
 
         # Exception/Partial/Unresolved cases SHOULD have llm_review attempted
         eligible_cases = [d for d in decisions if d.status in ("EXCEPTION", "PARTIAL", "UNRESOLVED")]
-        self.assertEqual(summary.gemini_calls_attempted, len(eligible_cases))
+        self.assertLessEqual(summary.gemini_calls_attempted, len(eligible_cases))
+        self.assertLessEqual(summary.gemini_calls_attempted, summary.gemini_eligible_cases * 3)
 
     # 12. Gemini cannot override controller decision
     @patch("google.genai.Client")
@@ -411,6 +412,23 @@ class TestGeminiLLMReviewer(unittest.TestCase):
         self.assertEqual(review.attempts, 1)  # EXACTLY 1 attempt, zero retries
         self.assertEqual(review.failure_category, "SCHEMA_ERROR")
         self.assertTrue(review.fallback_used)
+
+    @patch("google.genai.Client")
+    def test_17_batch_circuit_breaker_stops_repeated_outage_calls(self, mock_client_cls):
+        """Test that an exhausted transient outage prevents later batch calls."""
+        mock_client_instance = MagicMock()
+        mock_client_instance.models.generate_content.side_effect = Exception("503 UNAVAILABLE")
+        mock_client_cls.return_value = mock_client_instance
+
+        reviewer = GeminiExceptionReviewer(api_key="mock_key")
+        reviewer.begin_batch()
+        first_review = reviewer.review_exception(self.sample_evidence)
+        second_review = reviewer.review_exception(self.sample_evidence)
+
+        self.assertEqual(first_review.attempts, 3)
+        self.assertEqual(second_review.status_code, "CIRCUIT_OPEN")
+        self.assertEqual(second_review.attempts, 0)
+        self.assertEqual(mock_client_instance.models.generate_content.call_count, 3)
 
 
 if __name__ == "__main__":

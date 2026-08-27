@@ -143,13 +143,14 @@ def main() -> None:
         llm = d.llm_review or {}
         ev = d.evidence
         status_code = llm.get("status_code", "N/A")
-        val_status = "VALID" if status_code == "SUCCESS" else ("INVALID" if status_code in ("PARSE_ERROR", "UNSAFE_DECISION_REJECTED") else "N/A")
+        val_status = llm.get("validation_status", "NOT_RUN")
         cat = llm.get("failure_category") or ("NONE" if status_code == "SUCCESS" else "UNKNOWN")
 
         print(f"  ┌─ [PER-CASE GEMINI OBSERVABILITY RECORD | {d.ledger_id}]")
         print(f"  │  Ledger ID            : {d.ledger_id}")
         print(f"  │  Exception Type       : {d.exception_type}")
         print(f"  │  Attempts Made        : {llm.get('attempts', 1)}")
+        print(f"  │  Retry Count           : {llm.get('retry_count', max(0, llm.get('attempts', 0) - 1))}")
         print(f"  │  Final API Status     : {status_code}")
         print(f"  │  Failure Category     : {cat}")
         print(f"  │  Gemini Decision      : {llm.get('decision', 'N/A')}")

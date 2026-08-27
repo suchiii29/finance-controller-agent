@@ -89,6 +89,9 @@ class ExceptionReview:
     attempts: int = 1
     failure_category: Optional[str] = None  # AUTH_ERROR, RATE_LIMIT, TEMPORARY_SERVER_ERROR, TIMEOUT, NETWORK_ERROR, INVALID_RESPONSE, SCHEMA_ERROR, UNKNOWN_ERROR
     fallback_used: bool = False
+    validation_status: str = "NOT_RUN"  # VALID, INVALID, NOT_RUN
+    retry_count: int = 0
+    success: bool = False
 
     def to_dict(self) -> Dict[str, Any]:
         return asdict(self)
@@ -161,6 +164,8 @@ Your role is STRICTLY EXPLAINABILITY and INTERPRETATION of the verified evidence
         self.client: Optional[genai.Client] = None
         self.status = "UNAVAILABLE"
         self.is_configured = False
+        self._batch_circuit_open = False
+        self._batch_mode = False
 
         if self.api_key and HAS_GENAI:
             try:
@@ -175,7 +180,12 @@ Your role is STRICTLY EXPLAINABILITY and INTERPRETATION of the verified evidence
             except Exception as e:
                 self.status = "UNAVAILABLE"
                 self.is_configured = False
-                print(f"[WARN] Gemini Client initialization failed: {e}")
+                print(f"[WARN] Gemini Client initialization failed ({type(e).__name__}).")
+
+    def begin_batch(self) -> None:
+        """Reset the batch circuit so an outage is isolated to one batch run."""
+        self._batch_circuit_open = False
+        self._batch_mode = True
 
     @staticmethod
     def _classify_exception(err: Exception) -> str:
@@ -238,6 +248,28 @@ Your role is STRICTLY EXPLAINABILITY and INTERPRETATION of the verified evidence
                 attempts=0,
                 failure_category="AUTH_ERROR" if not self.api_key else "UNKNOWN_ERROR",
                 fallback_used=True
+            )
+
+        if self._batch_circuit_open:
+            return ExceptionReview(
+                review_id=review_id,
+                ledger_id=evidence.ledger_id,
+                decision="AI_REVIEW_UNAVAILABLE",
+                explanation="Gemini review is temporarily unavailable for this batch. Controller decision retained.",
+                evidence_used=[],
+                exception_type=evidence.exception_type,
+                recommended_action="Escalate to human reviewer.",
+                confidence=0.0,
+                requires_human_review=True,
+                model_name=self.model_name,
+                status_code="CIRCUIT_OPEN",
+                evidence_hash=evidence_hash,
+                latency_seconds=time.time() - start_time,
+                timestamp=timestamp,
+                attempts=0,
+                failure_category="TEMPORARY_SERVER_ERROR",
+                fallback_used=True,
+                retry_count=0,
             )
 
         # Build untrusted data payload and prompt
@@ -315,11 +347,16 @@ Your role is STRICTLY EXPLAINABILITY and INTERPRETATION of the verified evidence
 
                 if review.status_code == "SUCCESS":
                     review.fallback_used = False
+                    review.validation_status = "VALID"
+                    review.retry_count = max(0, attempts_made - 1)
+                    review.success = True
                     return review
                 else:
                     # Non-retryable schema/validation or safety rejection failure
                     review.failure_category = "SCHEMA_ERROR" if review.status_code == "PARSE_ERROR" else "INVALID_RESPONSE"
                     review.fallback_used = True
+                    review.validation_status = "INVALID"
+                    review.retry_count = max(0, attempts_made - 1)
                     return review
 
             except Exception as e:
@@ -338,14 +375,14 @@ Your role is STRICTLY EXPLAINABILITY and INTERPRETATION of the verified evidence
 
         # Fallback if all attempts failed
         elapsed = time.time() - start_time
-        err_type = type(last_error).__name__ if last_error else "Error"
-        err_msg = str(last_error) if last_error else "Max retries exhausted"
+        if self._batch_mode and last_failure_category in {"TEMPORARY_SERVER_ERROR", "RATE_LIMIT", "TIMEOUT", "NETWORK_ERROR"}:
+            self._batch_circuit_open = True
 
         return ExceptionReview(
             review_id=review_id,
             ledger_id=evidence.ledger_id,
             decision="AI_REVIEW_UNAVAILABLE",
-            explanation=f"Gemini API execution failed after {attempts_made} attempt(s) [{last_failure_category}]: {err_type} ({err_msg}). Controller decision retained.",
+            explanation=f"Gemini review unavailable after {attempts_made} attempt(s) ({last_failure_category}). Controller decision retained.",
             evidence_used=[],
             exception_type=evidence.exception_type,
             recommended_action="Escalate to human reviewer.",
@@ -355,11 +392,13 @@ Your role is STRICTLY EXPLAINABILITY and INTERPRETATION of the verified evidence
             status_code="API_ERROR",
             evidence_hash=evidence_hash,
             latency_seconds=elapsed,
-            raw_response=str(last_error) if last_error else last_raw_response,
+            raw_response=None,
             timestamp=timestamp,
             attempts=attempts_made,
             failure_category=last_failure_category or "UNKNOWN_ERROR",
-            fallback_used=True
+            fallback_used=True,
+            validation_status="NOT_RUN",
+            retry_count=max(0, attempts_made - 1),
         )
 
 
@@ -412,7 +451,7 @@ Strict Grounding & Safety Reminder:
                 confidence=0.0,
                 requires_human_review=True,
                 model_name=self.model_name,
-                status_code="PARSE_ERROR",
+                status_code="INVALID_RESPONSE",
                 evidence_hash=evidence_hash,
                 latency_seconds=elapsed,
                 raw_response=raw_text,
@@ -429,19 +468,15 @@ Strict Grounding & Safety Reminder:
             confidence = float(parsed_data.confidence)
             req_human = bool(parsed_data.requires_human_review)
 
-        except (ValidationError, Exception) as parse_err:
-            # Fallback for manual json attempt or invalid schema
+        except (ValidationError, json.JSONDecodeError, TypeError, ValueError):
+            # Inspect complete JSON only to classify an unsafe decision; never repair or accept it.
             try:
-                raw_json = json.loads(cleaned)
-                raw_decision = str(raw_json.get("decision", "")).upper()
-                
-                # Check for unauthorized MATCHED
-                if raw_decision == "MATCHED":
+                if json.loads(cleaned).get("decision", "").upper() == "MATCHED":
                     return ExceptionReview(
                         review_id=review_id,
                         ledger_id=evidence.ledger_id,
                         decision="AI_REVIEW_UNAVAILABLE",
-                        explanation="Gemini attempted to return unauthorized 'MATCHED' decision. Rejected by financial safety filter.",
+                        explanation="Gemini attempted an unauthorized MATCHED decision. Controller decision retained.",
                         evidence_used=[],
                         exception_type=evidence.exception_type,
                         recommended_action="Escalate to human review due to unsafe LLM output.",
@@ -452,16 +487,17 @@ Strict Grounding & Safety Reminder:
                         evidence_hash=evidence_hash,
                         latency_seconds=elapsed,
                         raw_response=raw_text,
-                        timestamp=timestamp
+                        timestamp=timestamp,
+                        validation_status="INVALID",
                     )
-            except Exception:
+            except (AttributeError, TypeError, ValueError, json.JSONDecodeError):
                 pass
 
             return ExceptionReview(
                 review_id=review_id,
                 ledger_id=evidence.ledger_id,
                 decision="AI_REVIEW_UNAVAILABLE",
-                explanation=f"Gemini output failed schema validation ({parse_err}). Controller decision retained.",
+                explanation="Gemini output failed strict schema validation. Controller decision retained.",
                 evidence_used=[],
                 exception_type=evidence.exception_type,
                 recommended_action="Escalate to human review.",
@@ -472,7 +508,8 @@ Strict Grounding & Safety Reminder:
                 evidence_hash=evidence_hash,
                 latency_seconds=elapsed,
                 raw_response=raw_text,
-                timestamp=timestamp
+                timestamp=timestamp,
+                validation_status="INVALID",
             )
 
         # SAFETY FILTER 1: Reject "MATCHED" decision if returned by LLM
@@ -518,5 +555,7 @@ Strict Grounding & Safety Reminder:
             evidence_hash=evidence_hash,
             latency_seconds=elapsed,
             raw_response=raw_text,
-            timestamp=timestamp
+            timestamp=timestamp,
+            validation_status="VALID",
+            success=True,
         )

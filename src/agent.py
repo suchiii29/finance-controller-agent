@@ -107,6 +107,13 @@ class AuditEvent:
     llm_attempts: Optional[int] = None
     llm_failure_category: Optional[str] = None
     llm_fallback_used: Optional[bool] = None
+    llm_latency_seconds: Optional[float] = None
+    llm_retry_count: Optional[int] = None
+    llm_validation_status: Optional[str] = None
+    llm_success: Optional[bool] = None
+    llm_recommended_action: Optional[str] = None
+    llm_human_review_required: Optional[bool] = None
+    llm_model_name: Optional[str] = None
 
     def to_dict(self) -> Dict[str, Any]:
         return asdict(self)
@@ -690,6 +697,13 @@ def tool_write_audit_event(
         llm_attempts=llm_review.attempts if llm_review else None,
         llm_failure_category=llm_review.failure_category if llm_review else None,
         llm_fallback_used=llm_review.fallback_used if llm_review else None,
+        llm_latency_seconds=llm_review.latency_seconds if llm_review else None,
+        llm_retry_count=llm_review.retry_count if llm_review else None,
+        llm_validation_status=llm_review.validation_status if llm_review else None,
+        llm_success=llm_review.success if llm_review else None,
+        llm_recommended_action=llm_review.recommended_action if llm_review else None,
+        llm_human_review_required=llm_review.requires_human_review if llm_review else None,
+        llm_model_name=llm_review.model_name if llm_review else None,
     )
 
 
@@ -749,7 +763,7 @@ def tool_summarize_batch(
         gemini_successful_reviews=successful,
         gemini_final_failures=final_failures,
         gemini_fallback_cases=fallback,
-        gemini_calls_attempted=eligible,
+        gemini_calls_attempted=total_att,
         gemini_calls_successful=successful,
         gemini_calls_failed=final_failures,
         gemini_total_latency_seconds=total_latency,
@@ -802,6 +816,7 @@ class FinanceControllerAgent:
         """
         t0 = time.perf_counter()
         self.tool_call_count = 0
+        self.llm_reviewer.begin_batch()
 
         # Step 1: Load sources (Tool 1)
         self.tool_call_count += 1
