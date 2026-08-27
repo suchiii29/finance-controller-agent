@@ -12,7 +12,7 @@
 | **Safely Auto-Resolved (AI Agent)** | 9 | 9.1% |
 | **Still Escalated Exceptions (Finance Ops)** | 3 | 3.0% |
 | **Total Effective Automation Rate** | **96 / 99** | **97.0%** |
-| **Processing Throughput** | **357 rec/sec** | — |
+| **Processing Throughput** | **317 rec/sec** | — |
 
 > **Financial Safety Statement:**
 > The system operates under strict financial control policies. Only single non-cash timing lags with 100% Tier-1 corroboration and zero collision risk are safely auto-resolved (9 cases). All 3 remaining risk cases (such as missing bank statement feeds) are safely escalated to Finance Ops with detailed root-cause explanations.
